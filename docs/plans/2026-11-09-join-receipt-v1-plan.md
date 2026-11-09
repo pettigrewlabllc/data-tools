@@ -263,3 +263,18 @@ Seeded PRNG (mulberry32, seed 20261109). Base tables: states (52), counties (~30
 
 - [ ] README: one paragraph, what it does, quick start (`npm install`, `npm run dev`, `npm test`, `npm run accuracy`), the accuracy number from `accuracy.json`, limits (Excel, synthetic samples, single-pair joins), privacy statement. ADRs 0001 closed grammar, 0002 mapping.yml as source of truth, 0003 single Node runtime, 0004 no backend. `.github/workflows/ci.yml`: install, typecheck, test, accuracy. MIT LICENSE.
 - [ ] Final: `npm run typecheck && npm test && npm run accuracy` all green. Commit `docs: README, ADRs, CI`.
+
+---
+
+## Review fold-in (after Fable, 2026-11-09)
+
+Full review: `docs/reviews/2026-11-09-fable-plan-review.md`. These override the tasks above where they disagree:
+
+- **Keys compare as text.** `keyExpr` wraps the final expression in `CAST(... AS VARCHAR)` and every string op casts its input first, so DuckDB never implicitly casts text to a number. Test: raw int `1001` vs `'01001'` matches 0 rows.
+- **Score:** `100 × (0.45·containment + 0.25·(either side unique) + 0.15·format + 0.15·name) − 30 if neither side unique − 60 if fewer than 3 distinct − 2 per transform`, clamped.
+- **Fan-out:** `joined_rows / matched_left_rows`; warn when that exceeds 1.05 or the right side has more than one row per key.
+- **Crosswalk subquery** ends `LIMIT 1`; a test asserts each crosswalk column is unique (upper-cased).
+- **pandas:** `dtype={key: str}` only for key columns, null keys dropped before merge, `validate='m:1'` only when the right side is unique.
+- **YAML** via the `yaml` package's `stringify` with a fixed key order (it quotes `'0'`, `'01001'`, `'null'`); round-trip test covers them.
+- **Fixtures** add adversarial families; README reports per-family accuracy from `accuracy.json` only.
+- **Cut for tonight:** Parquet download, duckdb-Python flavour.

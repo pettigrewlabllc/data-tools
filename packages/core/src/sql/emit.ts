@@ -30,7 +30,7 @@ export function transformSql(x: string, t: Transform): string {
     case 'crosswalk': {
       const cw = cwName(t.table);
       const fromCol = t.from === 'fips' ? 'fips' : `upper(${ident(t.from)})`;
-      return `(SELECT ${ident(t.to)} FROM ${cw} WHERE ${fromCol} = ${lookupKey(x, t.from)})`;
+      return `(SELECT ${ident(t.to)} FROM ${cw} WHERE ${fromCol} = ${lookupKey(x, t.from)} LIMIT 1)`;
     }
   }
 }
