@@ -17,7 +17,7 @@ export function tableNameFor(file: string, taken: Set<string>): string {
   return name;
 }
 
-function readerFor(file: string, path: string): string | null {
+export function readerFor(file: string, path: string): string | null {
   const ext = file.toLowerCase().match(/\.[^.]+$/)?.[0] ?? '';
   const p = lit(path);
   if (ext === '.csv' || ext === '.txt') return `read_csv_auto(${p}, sample_size=-1)`;

@@ -10,3 +10,6 @@ export * from './score';
 export * from './candidates';
 export * from './joinsql';
 export * from './receipt';
+export * from './mapping';
+export * from './emit-sql';
+export * from './emit-python';
