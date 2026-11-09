@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "order_id"
+  },
+  "right": {
+    "table": "right",
+    "column": "order_ref"
+  },
+  "family": "decoy",
+  "note": "shared low-cardinality status; real key is order id"
+}

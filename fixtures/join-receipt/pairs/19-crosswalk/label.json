@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "state"
+  },
+  "right": {
+    "table": "right",
+    "column": "fips"
+  },
+  "family": "crosswalk",
+  "note": "lower-case name vs fips"
+}

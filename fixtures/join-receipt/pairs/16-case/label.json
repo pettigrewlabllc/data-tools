@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "sku"
+  },
+  "right": {
+    "table": "right",
+    "column": "item"
+  },
+  "family": "case",
+  "note": "sku case/space drift"
+}

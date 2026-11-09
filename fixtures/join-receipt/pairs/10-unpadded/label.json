@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "area"
+  },
+  "right": {
+    "table": "right",
+    "column": "loc_code"
+  },
+  "family": "unpadded",
+  "note": "area (int) vs loc_code (zero-padded)"
+}

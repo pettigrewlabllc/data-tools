@@ -41,7 +41,7 @@ const ISO2 = crosswalkValues('country', 'iso2');
 const ISO3 = crosswalkValues('country', 'iso3');
 const COUNTRY_NAME = crosswalkValues('country', 'name');
 
-export interface ClassifyInput { name: string; type: string; samples: string[]; distinct: number; rows: number; maxLen: number }
+export interface ClassifyInput { name: string; type: string; samples: string[]; distinct: number; rows: number; maxLen: number; minLen?: number }
 
 const NUMERIC_TYPES = /^(TINYINT|SMALLINT|INTEGER|BIGINT|HUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|FLOAT|DOUBLE|DECIMAL)/;
 const INT_TYPES = /^(TINYINT|SMALLINT|INTEGER|BIGINT|HUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT)/;
@@ -66,7 +66,9 @@ export function classifyColumn(c: ClassifyInput): FormatClass {
   // Geography. County FIPS: 4-5 digits whose state part is a real state code.
   const countyLike = (v: string) => /^\d{4,5}$/.test(v) && STATE_FIPS.has(v.padStart(5, '0').slice(0, 2));
   if (hint('zip', 'postal') && most((v) => /^\d{3,5}$/.test(v))) return 'zip5';
-  if (most(countyLike) && (hint('fips', 'county', 'geoid', 'fip') || most((v) => /^\d{5}$/.test(v)))) return 'county_fips';
+  // County FIPS codes are odd-numbered, which separates them from ordinary 4-5 digit numbers.
+  const oddCounty = most((v) => countyLike(v) && Number(v) % 2 === 1);
+  if (most(countyLike) && (hint('fips', 'county', 'geoid', 'fip') || most((v) => /^\d{5}$/.test(v)) || oddCounty)) return 'county_fips';
   if (hint('fips', 'state') && most((v) => /^\d{1,2}$/.test(v) && STATE_FIPS.has(v.padStart(2, '0')))) return 'us_state_fips';
   const abbr = share((v) => STATE_ABBR.has(v.toUpperCase()));
   const iso2 = share((v) => ISO2.has(v.toUpperCase()));
@@ -78,9 +80,10 @@ export function classifyColumn(c: ClassifyInput): FormatClass {
 
   if (isInt && hint('year', 'yr') && most((v) => /^\d{4}$/.test(v) && +v >= 1800 && +v <= 2100)) return 'year';
   if (most((v) => /^[$€£]\s?-?[\d,]+(\.\d+)?$/.test(v))) return 'currency';
-  const idName = /(^id$|_id$|id$|_key$|_code$|code$|_no$|number$|_num$)/.test(name);
+  const idName = /(^id$|_id$|id$|_key$|_code$|code$|_no$|number$|_num$|_ref$|^ref$)/.test(name);
   if (isInt && (idName || (c.distinct === c.rows && !isNum))) return 'integer_id';
-  if (isInt && INT_TYPES.test(c.type) && c.distinct === c.rows && c.rows >= 10 && idName) return 'integer_id';
+  // A unique, fixed-width whole number is an identifier, not a measure.
+  if (isInt && c.distinct === c.rows && c.rows >= 10 && c.minLen !== undefined && c.minLen === c.maxLen && c.maxLen >= 3) return 'integer_id';
   if (isNum) return 'numeric';
   if (c.maxLen > 40 && share((v) => v.includes(' ')) >= 0.5) return 'free_text';
   if (c.distinct <= 50 && c.distinct <= Math.max(2, 0.2 * c.rows)) return 'categorical';

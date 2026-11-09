@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "fips"
+  },
+  "right": {
+    "table": "right",
+    "column": "geoid"
+  },
+  "family": "decoy",
+  "note": "shared state column; real key is fips vs geoid"
+}

@@ -40,11 +40,12 @@ export async function profileTable(db: Db, table: string, file: string): Promise
     const distinct = Number(stats[`d${i}`]);
     const nulls = Number(stats[`n${i}`]);
     const maxLen = Number(stats[`hi${i}`] ?? 0);
+    const minLen = Number(stats[`lo${i}`] ?? 0);
     columns.push({
       name: c.name, type: c.type, distinct, nulls, nullPct: rows ? nulls / rows : 0,
       unique: rows > 0 && nulls === 0 && distinct === rows,
-      format: classifyColumn({ name: c.name, type: c.type, samples, distinct, rows, maxLen }),
-      samples, minLen: Number(stats[`lo${i}`] ?? 0), maxLen, rowNumber: false,
+      format: classifyColumn({ name: c.name, type: c.type, samples, distinct, rows, maxLen, minLen }),
+      samples, minLen, maxLen, rowNumber: false,
     });
   }
   for (const c of columns) {

@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "state_name"
+  },
+  "right": {
+    "table": "right",
+    "column": "state"
+  },
+  "family": "crosswalk",
+  "note": "state name vs abbr"
+}

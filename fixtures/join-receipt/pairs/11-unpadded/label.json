@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "county"
+  },
+  "right": {
+    "table": "right",
+    "column": "county_id"
+  },
+  "family": "unpadded",
+  "note": "county (int) vs county_id (zero-padded)"
+}

@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "fips"
+  },
+  "right": {
+    "table": "right",
+    "column": "county_fips"
+  },
+  "family": "unpadded",
+  "note": "fips (int) vs county_fips (zero-padded)"
+}

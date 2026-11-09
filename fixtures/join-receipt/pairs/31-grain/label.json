@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "fips"
+  },
+  "right": {
+    "table": "right",
+    "column": "county_fips"
+  },
+  "family": "grain",
+  "note": "county dimension vs 4 days of facts"
+}

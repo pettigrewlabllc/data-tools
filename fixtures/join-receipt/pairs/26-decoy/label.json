@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "email"
+  },
+  "right": {
+    "table": "right",
+    "column": "requester"
+  },
+  "family": "decoy",
+  "note": "overlapping int ids from different sequences; real key is email"
+}

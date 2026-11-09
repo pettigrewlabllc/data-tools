@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "email"
+  },
+  "right": {
+    "table": "right",
+    "column": "contact_email"
+  },
+  "family": "case",
+  "note": "email case/space drift"
+}

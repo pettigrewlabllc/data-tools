@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "code"
+  },
+  "right": {
+    "table": "right",
+    "column": "region_key"
+  },
+  "family": "decoy",
+  "note": "padded vs unpadded with unrelated names plus a shared name column"
+}
