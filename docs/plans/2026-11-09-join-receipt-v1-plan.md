@@ -20,7 +20,7 @@
 - Lift threshold 3, minimum unmatched count 3, columns with 3–50 distinct values only.
 - Fan-out warning when `joined_rows / left_rows > 1.05`.
 - `mapping.yml` + tool version → byte-identical SQL and Python.
-- Dev server port 3066.
+- Dev server port 3067.
 - Copy on screen is placeholder-plain; final strings go through joel-voice at the controller.
 
 ## File map
@@ -255,7 +255,7 @@ Seeded PRNG (mulberry32, seed 20261109). Base tables: states (52), counties (~30
 - `state.ts`: reducer with `files`, `profiles`, `candidates`, `cards: Record<id, {plan, receipt, status, drafts, busy, error}>`, `ai: ModelConfig & {mode}`; actions LOAD_START/LOADED/PROFILED/CANDIDATES/CARD_EDIT/RECEIPT/APPROVE/REJECT/DRAFTS.
 - ReceiptCard: `<article aria-labelledby>`, numbers in a `<dl>`, Approve/Reject buttons (keyboard reachable), pattern sentence, fan-out warning with AggregateEditor, transform chips with remove/add, before/after table.
 - ExportPanel: builds Mapping from approved cards; downloads via Blob URLs; joined CSV/Parquet via `COPY (<emitSqlScript select>) TO 'out.csv'` in Wasm then `copyFileToBuffer`.
-- Vite dev server port 3066, `strictPort: true`; `optimizeDeps.exclude: ['@duckdb/duckdb-wasm']`.
+- Vite dev server port 3067, `strictPort: true`; `optimizeDeps.exclude: ['@duckdb/duckdb-wasm']`.
 
 - [ ] Typecheck, boot via `preview_start` (`join-receipt` entry in the session's `.claude/launch.json`), load sample data, approve a join, download each file, check console clean, screenshots at 390 and 1280. Commit `feat(web): join receipt app`.
 

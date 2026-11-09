@@ -62,7 +62,7 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     const ref = plan.join[side];
     if (!ref.transforms.length) continue;
     const alias = side === 'left' ? 'l' : 'r', key = side === 'left' ? p.lk : p.rk, src = side === 'left' ? 'L' : 'R';
-    const rows = await q(`SELECT raw, k FROM (SELECT DISTINCT CAST(${alias}.${ident(ref.column)} AS VARCHAR) AS raw, ${key} AS k FROM ${src} AS ${alias} WHERE ${alias}.${ident(ref.column)} IS NOT NULL) ORDER BY hash(raw), raw LIMIT 5`);
+    const rows = await q(`SELECT raw, k FROM (SELECT DISTINCT CAST(${alias}.${ident(ref.column)} AS VARCHAR) AS raw, ${key} AS k FROM ${src} AS ${alias} WHERE ${alias}.${ident(ref.column)} IS NOT NULL) ORDER BY (raw = k) NULLS FIRST, hash(raw), raw LIMIT 5`);
     for (const r of rows) samples.push({ side, raw: String(r.raw), transformed: r.k == null ? null : String(r.k) });
   }
 
@@ -108,6 +108,8 @@ async function patterns(
     }
   }
   found.sort((a, b) => b.lift - a.lift || b.unmatchedCount - a.unmatchedCount || a.column.localeCompare(b.column));
+  // When one pattern already covers every unmatched row, a second one is noise.
+  if (found[0] && found[0].unmatchedCount === unmatchedTotal) return found.slice(0, 1);
   return found.slice(0, 2);
 }
 

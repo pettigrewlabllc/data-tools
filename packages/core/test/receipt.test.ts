@@ -20,6 +20,7 @@ describe('receipt', () => {
     expect(r.patternsLeft[0]).toMatchObject({ column: 'state', value: 'AK', unmatchedCount: 3 });
     expect(r.patternsLeft[0].lift).toBeCloseTo(3.33, 1);
     expect(describePattern(r.patternsLeft[0])).toBe('All 3 unmatched rows have state = AK (AK is 30% of the file).');
+    expect(r.patternsLeft).toHaveLength(1);
   });
 
   it('never reports a column with fewer than 3 distinct values', async () => {
@@ -63,12 +64,13 @@ describe('receipt', () => {
 
   it('shows the match rate before and after zero-padding, with before/after samples', async () => {
     const { db, profiles } = await setup({
-      'a.csv': csv('fips', [[1001], [1003], [2013]]),
-      'b.csv': csv('county_fips', [['01001'], ['01003'], ['02013']]),
+      'a.csv': csv('fips', [[1001], [1003], [2013], [10001], [10003], [10005], [10007], [10009]]),
+      'b.csv': csv('county_fips', [['01001'], ['01003'], ['02013'], ['10001'], ['10003'], ['10005'], ['10007'], ['10009']]),
     });
     const r = await buildReceipt(db, profiles, { join: { op: 'join_on', how: 'left', left: key('a', 'fips', [{ op: 'lpad', width: 5, fill: '0' }]), right: key('b', 'county_fips') } });
-    expect(r.matchRateBefore).toBe(0);
+    expect(r.matchRateBefore).toBe(5 / 8);
     expect(r.matchRateAfter).toBe(1);
+    expect(r.samples.slice(0, 3).every((x) => x.raw !== x.transformed)).toBe(true);
     expect(r.samples).toContainEqual({ side: 'left', raw: '1001', transformed: '01001' });
     expect(r.normalisations).toBe('zero-padding to 5');
   });
