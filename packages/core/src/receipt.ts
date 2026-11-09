@@ -128,3 +128,21 @@ export function proposeAggregate(profile: TableProfile, keyColumn: string): Aggr
     .map((c) => ({ column: c.name, fn: (NUMERIC.test(c.type) && c.format !== 'integer_id' && c.format !== 'year' ? 'sum' : 'first') as AggFn }));
   return { op: 'aggregate', table: profile.table, by: [keyColumn], measures };
 }
+
+/** A few raw key values from each side that found no match, for the AI payload and the card. */
+export async function unmatchedExamples(db: Db, profiles: TableProfile[], plan: Plan, limit = 8): Promise<{ left: string[]; right: string[] }> {
+  const p = joinParts(plan, profiles);
+  const ctes = [
+    ...p.ctes,
+    `LK AS (SELECT DISTINCT ${p.lk} AS k FROM L AS l WHERE ${p.lk} IS NOT NULL)`,
+    `RK AS (SELECT DISTINCT ${p.rk} AS k FROM R AS r WHERE ${p.rk} IS NOT NULL)`,
+  ];
+  const side = async (alias: string, src: string, col: string, key: string, other: string) => {
+    const rows = await db.query(withCtes(ctes, `SELECT v FROM (SELECT DISTINCT CAST(${alias}.${ident(col)} AS VARCHAR) AS v FROM ${src} AS ${alias} WHERE ${alias}.${ident(col)} IS NOT NULL AND coalesce(${key} IN (SELECT k FROM ${other}), false) = false) ORDER BY hash(v), v LIMIT ${limit}`));
+    return rows.map((r) => String(r.v));
+  };
+  return {
+    left: await side('l', 'L', plan.join.left.column, p.lk, 'RK'),
+    right: await side('r', 'R', plan.join.right.column, p.rk, 'LK'),
+  };
+}

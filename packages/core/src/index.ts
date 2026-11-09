@@ -13,3 +13,7 @@ export * from './receipt';
 export * from './mapping';
 export * from './emit-sql';
 export * from './emit-python';
+export * from './ai/payload';
+export * from './ai/prompt';
+export * from './ai/providers';
+export * from './ai/drafts';
