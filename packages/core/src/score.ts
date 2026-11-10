@@ -1,4 +1,4 @@
-import type { KeyRef, Transform } from './grammar';
+import type { KeyPair, KeyRef, Transform } from './grammar';
 
 export interface Features {
   containLeft: number; containRight: number; overlap: number;
@@ -47,21 +47,24 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
  * matching format 0.15, similar names 0.15; penalties for many-to-many, near-constant columns,
  * row numbers on both sides and each transform needed.
  */
-export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef): { score: number; reason: string } {
+export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef, also: KeyPair[] = []): { score: number; reason: string } {
   const contain = Math.max(f.containLeft, f.containRight);
   let s = 100 * (0.45 * contain + 0.25 * (f.leftUnique || f.rightUnique ? 1 : 0) + 0.15 * (f.formatMatch ? 1 : 0) + 0.15 * f.nameSim);
   const notes: string[] = [];
   if (!f.leftUnique && !f.rightUnique) { s -= 30; notes.push('neither side is unique, so rows would multiply'); }
   if (f.minDistinct < 3) { s -= 60; notes.push('too few distinct values to be a key'); }
   if (f.bothRowNumbers) { s -= 45; notes.push('both columns look like row numbers'); }
-  const nT = left.transforms.length + right.transforms.length;
+  const all = [left, right, ...also.flatMap((p) => [p.left, p.right])];
+  const nT = all.reduce((n, k) => n + k.transforms.length, 0);
   s -= 2 * nT;
   const score = Math.max(0, Math.min(100, Math.round(s)));
 
-  const fixes = describeTransforms([...left.transforms, ...right.transforms]);
+  const fixes = describeTransforms(all.flatMap((k) => k.transforms));
+  const cols = (side: 'left' | 'right') => [side === 'left' ? left : right, ...also.map((p) => p[side])].map((k) => k.column).join(' × ');
   const parts = [
     `${pct(f.containLeft)} of ${left.table} keys found in ${right.table}${fixes ? ` after ${fixes}` : ''}`,
-    f.rightUnique ? `${right.table}.${right.column} is unique` : f.leftUnique ? `${left.table}.${left.column} is unique` : '',
+    also.length && f.leftUnique && f.rightUnique ? `each file has one row per key (${cols('left')} = ${cols('right')})` : '',
+    !also.length && f.rightUnique ? `${right.table}.${right.column} is unique` : !also.length && f.leftUnique ? `${left.table}.${left.column} is unique` : '',
     f.nameSim >= 0.5 ? `names match (${left.column} ↔ ${right.column})` : '',
     ...notes,
   ].filter(Boolean);

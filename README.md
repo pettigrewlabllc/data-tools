@@ -9,7 +9,7 @@ Here's the problem it's for. A county code is `1001` in one file and `01001` in 
 ```bash
 npm install
 npm run dev          # http://localhost:3067, click "Try the sample data"
-npm test             # 38 tests against real DuckDB
+npm test             # 48 tests against real DuckDB
 npm run accuracy     # scores the labelled join set, writes fixtures/join-receipt/accuracy.json
 ```
 
@@ -47,8 +47,8 @@ Read that number for what it is. The first run scored 94.4%, and the two misses 
 
 ## Limits right now
 
-- CSV, TSV, Parquet and JSON/NDJSON. No Excel yet; save it as CSV.
-- One key column per join. A county × year key isn't supported; roll one side up instead.
+- CSV, TSV, Excel (.xlsx), Parquet and JSON/NDJSON. Excel files are read from the first sheet with a table in it, skipping title rows above the header and footnotes below the data. The exported scripts read a CSV copy of that table (you download it with them), because reading the .xlsx directly in DuckDB or pandas turns years into `2024.0` and dates into serial numbers, and the keys would stop matching. The old .xls format isn't supported.
+- Keys can be up to three columns, like state × county or county × year. It proposes a second column when the best single one repeats on both sides, and you can add one under "Change it". Cleanup steps apply to the first key column only.
 - Joins are pairwise. Planning across many tables comes later.
 - The SQL export is DuckDB SQL (it uses `TRY_CAST` and `read_csv_auto`). Postgres is planned with the dbt output.
 - The sample data is synthetic, shaped like Census county files.

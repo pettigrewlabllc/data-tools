@@ -1,12 +1,12 @@
 import type { Db } from './db';
-import type { KeyRef, Transform, CodeKind, CrosswalkTable } from './grammar';
+import type { KeyPair, KeyRef, Transform, CodeKind, CrosswalkTable } from './grammar';
 import type { ColumnProfile, TableProfile } from './profile';
 import { formatFamily, joinable, type FormatClass } from './formats';
 import { ident } from './sql/quote';
-import { keyExpr, crosswalkCtes, withClause } from './sql/emit';
+import { keyExpr, compositeKeyExpr, crosswalkCtes, withClause } from './sql/emit';
 import { nameSimilarity, scoreCandidate, type Features } from './score';
 
-export interface JoinCandidate { left: KeyRef; right: KeyRef; features: Features; score: number; reason: string }
+export interface JoinCandidate { left: KeyRef; right: KeyRef; also?: KeyPair[]; features: Features; score: number; reason: string }
 export interface PairResult { left: string; right: string; best: JoinCandidate[]; reliable: boolean }
 export interface CandidateResult { pairs: PairResult[] }
 
@@ -54,10 +54,11 @@ function plausible(l: ColumnProfile, r: ColumnProfile, sim: number): boolean {
   return false;
 }
 
-async function containment(db: Db, left: KeyRef, right: KeyRef): Promise<{ nl: number; nr: number; both: number }> {
-  const lk = keyExpr(left, 'l'), rk = keyExpr(right, 'r');
+async function containment(db: Db, left: KeyRef, right: KeyRef, also: KeyPair[] = []): Promise<{ nl: number; nr: number; both: number }> {
+  const lrefs = [left, ...also.map((p) => p.left)], rrefs = [right, ...also.map((p) => p.right)];
+  const lk = compositeKeyExpr(lrefs, 'l'), rk = compositeKeyExpr(rrefs, 'r');
   const sql = `${withClause([
-    ...crosswalkCtes([left, right]),
+    ...crosswalkCtes([...lrefs, ...rrefs]),
     `lk AS (SELECT DISTINCT ${lk} AS k FROM ${ident(left.table)} AS l WHERE ${lk} IS NOT NULL)`,
     `rk AS (SELECT DISTINCT ${rk} AS k FROM ${ident(right.table)} AS r WHERE ${rk} IS NOT NULL)`,
   ])}SELECT (SELECT count(*) FROM lk) AS nl, (SELECT count(*) FROM rk) AS nr, (SELECT count(*) FROM lk JOIN rk USING (k)) AS both`;
@@ -109,9 +110,58 @@ export async function candidatesForPair(db: Db, lp: TableProfile, rp: TableProfi
     if (best) found.push(best);
   }
   found.sort((a, b) => b.score - a.score || a.left.column.localeCompare(b.left.column) || a.right.column.localeCompare(b.right.column));
+  const composite = await compositeCandidate(db, lp, rp, found);
+  if (composite) found.unshift(composite);
   const top = found[0];
   const reliable = !!top && top.score >= RELIABLE_SCORE && Math.max(top.features.containLeft, top.features.containRight) >= RELIABLE_CONTAINMENT;
   return { left: lp.table, right: rp.table, best: found.slice(0, 3), reliable };
+}
+
+/** Is a several-column key, after its cleanup, one row per key with no missing parts? */
+async function compositeUnique(db: Db, p: TableProfile, refs: KeyRef[]): Promise<boolean> {
+  const k = compositeKeyExpr(refs, 't');
+  const [r] = await db.query(`${withClause(crosswalkCtes(refs))}SELECT count(DISTINCT ${k}) AS d, count(${k}) AS n FROM ${ident(p.table)} AS t`);
+  return Number(r.d) === Number(r.n) && Number(r.n) === p.rows;
+}
+
+/**
+ * When the best single-column key repeats on both sides (county code 001 is in every state), look for a
+ * second column pair that makes it a real key, like state × county or county × year. Only proposed if it
+ * scores higher than the single key it extends.
+ */
+async function compositeCandidate(db: Db, lp: TableProfile, rp: TableProfile, found: JoinCandidate[]): Promise<JoinCandidate | null> {
+  const base = found[0];
+  if (!base || (base.features.leftUnique && base.features.rightUnique)) return null;
+  const keyish = (c: ColumnProfile) => joinable(c.format) && c.nulls === 0 && c.distinct >= 2 && formatFamily(c.format) !== 'measure';
+  let best: JoinCandidate | null = null;
+  let tried = 0;
+  for (const lo of lp.columns) for (const ro of rp.columns) {
+    if (lo.name === base.left.column || ro.name === base.right.column || !keyish(lo) || !keyish(ro)) continue;
+    const sim = nameSimilarity(lo.name, ro.name, lp.table, rp.table);
+    const sameFamily = formatFamily(lo.format) === formatFamily(ro.format);
+    if (!(sameFamily && formatFamily(lo.format) !== 'text') && sim < 0.5) continue;
+    if (++tried > 30) break;
+    for (const chain of normalisationChains(lo, ro)) {
+      const also: KeyPair[] = [{ left: { table: lp.table, column: lo.name, transforms: chain.left }, right: { table: rp.table, column: ro.name, transforms: chain.right } }];
+      const c = await containment(db, base.left, base.right, also);
+      if (c.both === 0) continue;
+      const features: Features = {
+        ...base.features,
+        containLeft: c.nl ? c.both / c.nl : 0,
+        containRight: c.nr ? c.both / c.nr : 0,
+        overlap: c.both,
+        leftUnique: await compositeUnique(db, lp, [base.left, also[0].left]),
+        rightUnique: await compositeUnique(db, rp, [base.right, also[0].right]),
+        formatMatch: base.features.formatMatch && sameFamily,
+        nameSim: (base.features.nameSim + sim) / 2,
+        minDistinct: Math.min(base.features.minDistinct, lo.distinct, ro.distinct),
+      };
+      if (!features.leftUnique && !features.rightUnique) continue;
+      const { score, reason } = scoreCandidate(features, base.left, base.right, also);
+      if (score > base.score && (!best || score > best.score)) best = { left: base.left, right: base.right, also, features, score, reason };
+    }
+  }
+  return best;
 }
 
 export async function findCandidates(db: Db, profiles: TableProfile[]): Promise<CandidateResult> {

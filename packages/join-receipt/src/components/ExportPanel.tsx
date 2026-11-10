@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toYaml, emitSqlScript, emitPython, joinParts, withCtes, planOf, TOOL, TOOL_VERSION, type Mapping, type TableProfile, type Db } from '@data-tools/core';
+import { toYaml, emitSqlScript, emitPython, joinParts, withCtes, planOf, mappingTable, TOOL, TOOL_VERSION, type Mapping, type TableProfile, type Db } from '@data-tools/core';
 import type { Card } from './ReceiptCard';
 import type { WasmDb } from '../wasmDb';
 
@@ -7,10 +7,11 @@ export function buildMapping(cards: Card[], profiles: TableProfile[]): Mapping {
   return {
     tool: TOOL,
     version: TOOL_VERSION,
-    tables: profiles.map((p) => ({ name: p.table, file: p.file, grain: p.grain })),
+    tables: profiles.map(mappingTable),
     joins: cards.filter((c) => c.plan && c.receipt && c.status !== 'proposed').map((c) => ({
       id: c.id,
       left: c.plan!.join.left, right: c.plan!.join.right, how: c.plan!.join.how,
+      ...(c.plan!.join.also?.length ? { also: c.plan!.join.also } : {}),
       aggregate_left: c.plan!.aggregateLeft ?? null, aggregate_right: c.plan!.aggregateRight ?? null,
       status: c.status, proposed_by: c.proposedBy, llm: c.proposedBy === 'llm' ? c.llm : null,
       receipt: {
@@ -29,7 +30,7 @@ function download(name: string, data: string | Uint8Array, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function ExportPanel({ cards, profiles, db }: { cards: Card[]; profiles: TableProfile[]; db: () => Promise<Db> }) {
+export function ExportPanel({ cards, profiles, db, copies }: { cards: Card[]; profiles: TableProfile[]; db: () => Promise<Db>; copies: Map<string, string> }) {
   const [tab, setTab] = useState<'sql' | 'python' | 'yaml'>('python');
   const [error, setError] = useState('');
   const mapping = buildMapping(cards, profiles);
@@ -63,7 +64,11 @@ export function ExportPanel({ cards, profiles, db }: { cards: Card[]; profiles: 
             <button onClick={() => download('join.sql', code.sql, 'text/plain')}>join.sql</button>
             <button onClick={() => download('join_pandas.py', code.python, 'text/x-python')}>join_pandas.py</button>
             <button onClick={() => download('mapping.yml', code.yaml, 'text/yaml')}>mapping.yml</button>
+            {profiles.filter((p) => p.readFrom && copies.has(p.readFrom)).map((p) => (
+              <button key={p.table} onClick={() => download(p.readFrom!, copies.get(p.readFrom!)!, 'text/csv')}>{p.readFrom}</button>
+            ))}
           </div>
+          {profiles.some((p) => p.readFrom) && <p className="hint small">The scripts read your Excel files through these CSV copies, so they get exactly the rows the receipts counted. Save them next to the scripts.</p>}
           {error && <p className="warn" role="alert">{error}</p>}
           <div className="tabs" role="tablist" aria-label="Generated code">
             {(['python', 'sql', 'yaml'] as const).map((t) => (

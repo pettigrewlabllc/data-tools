@@ -1,10 +1,12 @@
 import type { Db } from './db';
 import { ident, lit } from './sql/quote';
+import { excelToCsv, type SheetRange } from './excel';
 
-export interface LoadedTable { ok: true; name: string; file: string; rows: number }
+/** For an Excel file, `copy` is the CSV the table was read from. Exported SQL and pandas read that copy. */
+export interface LoadedTable { ok: true; name: string; file: string; rows: number; sheet?: SheetRange; copy?: { file: string; text: string } }
 export interface LoadError { ok: false; file: string; error: string }
 
-export const SUPPORTED = ['.csv', '.tsv', '.txt', '.parquet', '.json', '.ndjson', '.jsonl'];
+export const SUPPORTED = ['.csv', '.tsv', '.txt', '.parquet', '.json', '.ndjson', '.jsonl', '.xlsx'];
 
 /** A SQL-friendly table name from a file name: lower snake case, de-duplicated with _2, _3... */
 export function tableNameFor(file: string, taken: Set<string>): string {
@@ -31,9 +33,23 @@ export function readerFor(file: string, path: string): string | null {
 export async function loadFile(db: Db, file: string, bytes: Uint8Array, taken: Set<string>): Promise<LoadedTable | LoadError> {
   const short = file.replace(/^.*[\\/]/, '');
   try {
-    await db.registerFile(short, bytes);
-    const reader = readerFor(short, db.resolve(short));
-    if (!reader) return { ok: false, file: short, error: `unsupported file type (use ${SUPPORTED.join(', ')}; Excel is not supported yet)` };
+    let sheet: SheetRange | undefined;
+    let copy: LoadedTable['copy'];
+    let reader: string | null;
+    if (/\.xls$/i.test(short)) return { ok: false, file: short, error: 'this is the old .xls format; save it as .xlsx or CSV first' };
+    if (/\.xlsx$/i.test(short)) {
+      // Read the workbook in JavaScript and hand DuckDB a CSV copy, so nothing depends on a DuckDB extension download.
+      const t = await excelToCsv(bytes);
+      sheet = t.range;
+      const copyName = `${short}.csv`;
+      await db.registerFile(copyName, new TextEncoder().encode(t.csv));
+      reader = readerFor(copyName, db.resolve(copyName));
+      copy = { file: copyName, text: t.csv };
+    } else {
+      await db.registerFile(short, bytes);
+      reader = readerFor(short, db.resolve(short));
+    }
+    if (!reader) return { ok: false, file: short, error: `unsupported file type (use ${SUPPORTED.join(', ')})` };
     const name = tableNameFor(short, taken);
     try {
       await db.query(`CREATE OR REPLACE TABLE ${ident(name)} AS SELECT * FROM ${reader}`);
@@ -42,7 +58,7 @@ export async function loadFile(db: Db, file: string, bytes: Uint8Array, taken: S
       throw e;
     }
     const [{ n }] = await db.query(`SELECT count(*) AS n FROM ${ident(name)}`);
-    return { ok: true, name, file: short, rows: Number(n) };
+    return { ok: true, name, file: short, rows: Number(n), ...(sheet ? { sheet } : {}), ...(copy ? { copy } : {}) };
   } catch (e) {
     return { ok: false, file: short, error: firstLine(e) };
   }

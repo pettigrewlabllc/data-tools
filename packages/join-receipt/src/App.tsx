@@ -15,6 +15,7 @@ const MAX_FILES = 10;
 export function App() {
   const dbRef = useRef<WasmDb | null>(null);
   const takenRef = useRef(new Set<string>());
+  const copiesRef = useRef(new Map<string, string>());
   const [phase, setPhase] = useState<'idle' | 'loading' | 'ready'>('idle');
   const [status, setStatus] = useState('');
   const [errors, setErrors] = useState<LoadError[]>([]);
@@ -65,7 +66,9 @@ export function App() {
         const r = await loadFile(d, f.name, f.bytes, takenRef.current);
         if (!r.ok) { errs.push(r); continue; }
         setStatus(`Profiling ${f.name}…`);
-        profs.push(await profileTable(d, r.name, r.file));
+        const prof = await profileTable(d, r.name, r.file);
+        if (r.copy) copiesRef.current.set(r.copy.file, r.copy.text);
+        profs.push(r.sheet && r.copy ? { ...prof, sheet: r.sheet, readFrom: r.copy.file } : prof);
       }
       setErrors(errs);
       setProfiles(profs);
@@ -73,7 +76,7 @@ export function App() {
       const { pairs } = profs.length >= 2 ? await findCandidates(d, profs) : { pairs: [] as PairResult[] };
       const next: Card[] = pairs.map((pair) => {
         const top = pair.best[0];
-        const plan: Plan | null = top ? { join: { op: 'join_on', left: top.left, right: top.right, how: 'left' } } : null;
+        const plan: Plan | null = top ? { join: { op: 'join_on', left: top.left, right: top.right, how: 'left', ...(top.also ? { also: top.also } : {}) } } : null;
         return { id: `${pair.left}__${pair.right}`, pair, choice: 0, plan, status: 'proposed', proposedBy: 'rule', busy: !!plan, llm: null, drafts: [] };
       });
       setCards(next);
@@ -124,11 +127,11 @@ export function App() {
           <button className="primary" disabled={phase === 'loading'} onClick={() => void loadAll(sampleFiles())}>Try the sample data</button>
           <label className={`button ${phase === 'loading' ? 'is-disabled' : ''}`}>
             Add your files
-            <input type="file" multiple accept=".csv,.tsv,.txt,.parquet,.json,.ndjson,.jsonl" disabled={phase === 'loading'} onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
+            <input type="file" multiple accept=".csv,.tsv,.txt,.parquet,.json,.ndjson,.jsonl,.xlsx" disabled={phase === 'loading'} onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
           </label>
           {profiles.length > 0 && <button className="quiet" onClick={reset}>Start over</button>}
         </div>
-        <p className="hint">Or drop CSV, Parquet or JSON files here, 2 to 10 of them. Excel isn't supported yet, so save it as CSV first.</p>
+        <p className="hint">Or drop CSV, Excel, Parquet or JSON files here, 2 to 10 of them.</p>
         {status && <p className="status" role="status">{status}</p>}
         {errors.length > 0 && (
           <ul className="errors" role="alert">
@@ -165,7 +168,7 @@ export function App() {
 
       {profiles.length >= 2 && <AiPanel ai={ai} setAi={setAi} />}
 
-      {cards.length > 0 && <ExportPanel cards={cards} profiles={profiles} db={() => db()} />}
+      {cards.length > 0 && <ExportPanel cards={cards} profiles={profiles} db={() => db()} copies={copiesRef.current} />}
 
       <footer className="foot">
         <p>Free and open source. Every number on this page comes from SQL run by DuckDB on your machine.</p>

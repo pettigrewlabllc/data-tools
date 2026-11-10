@@ -1,3 +1,4 @@
+import type { SheetRange } from './excel';
 import type { Db } from './db';
 import { ident } from './sql/quote';
 import { classifyColumn, joinable, formatFamily, type FormatClass } from './formats';
@@ -8,7 +9,11 @@ export interface ColumnProfile {
   /** Unique integers running 0..n-1 or 1..n: a row number, not a real key. */
   rowNumber: boolean;
 }
-export interface TableProfile { table: string; file: string; rows: number; columns: ColumnProfile[]; grain: string[] | null }
+export interface TableProfile {
+  table: string; file: string; rows: number; columns: ColumnProfile[]; grain: string[] | null;
+  /** Excel only: which sheet and rows the table came from, and the CSV copy exports read. */
+  sheet?: SheetRange; readFrom?: string;
+}
 
 export const SAMPLE_SIZE = 200;
 

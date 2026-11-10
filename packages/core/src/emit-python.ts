@@ -1,4 +1,4 @@
-import type { Aggregate, KeyRef, Transform } from './grammar';
+import { sideRefs, type Aggregate, type KeyRef, type Transform } from './grammar';
 import { CROSSWALKS } from './sql/crosswalks';
 import { planOf, type Mapping, type MappingJoin } from './mapping';
 
@@ -47,8 +47,12 @@ function aggPy(df: string, a: Aggregate): string {
 /** A pandas snippet that reproduces each approved join and asserts the receipt's row count. */
 export function emitPython(m: Mapping): string {
   const approved = m.joins.filter((j) => j.status === 'approved');
-  const files = new Map(m.tables.map((t) => [t.name, t.file]));
-  const lines = [`# Join Receipt ${m.version}: generated from mapping.yml.`, `# Keys are compared as text, after the listed transforms; rows with no key never match.`, 'import pandas as pd', ''];
+  const files = new Map(m.tables.map((t) => [t.name, t.read_from ?? t.file]));
+  const lines = [
+    `# Join Receipt ${m.version}: generated from mapping.yml.`, `# Keys are compared as text, after the listed transforms; rows with no key never match.`,
+    ...m.tables.filter((t) => t.read_from).map((t) => `# ${t.file} is read from ${t.read_from}, the CSV copy of sheet "${t.sheet?.name}" rows ${t.sheet?.header_row} to ${t.sheet?.last_row}. Download it next to this script.`),
+    'import pandas as pd', '',
+  ];
   const crosswalks = new Map<string, string>();
   const cwVar = (t: Extract<Transform, { op: 'crosswalk' }>) => {
     const name = `${t.table.toUpperCase()}_${t.from.toUpperCase()}_TO_${t.to.toUpperCase()}`;
@@ -74,15 +78,18 @@ function keyPy(df: string, k: KeyRef, cw: (t: Extract<Transform, { op: 'crosswal
 function joinPy(j: MappingJoin, files: Map<string, string>, cw: (t: Extract<Transform, { op: 'crosswalk' }>) => string): string[] {
   const plan = planOf(j);
   const L = `${pyVar(j.left.table)}_df`, R = `${pyVar(j.right.table)}_df`;
+  const lrefs = sideRefs(plan.join, 'left'), rrefs = sideRefs(plan.join, 'right');
   const out = [
     `# ${j.id}`,
-    `${L} = ${reader(files.get(j.left.table) ?? j.left.table, [j.left.column])}`,
-    `${R} = ${reader(files.get(j.right.table) ?? j.right.table, [j.right.column])}`,
+    `${L} = ${reader(files.get(j.left.table) ?? j.left.table, lrefs.map((k) => k.column))}`,
+    `${R} = ${reader(files.get(j.right.table) ?? j.right.table, rrefs.map((k) => k.column))}`,
   ];
   if (plan.aggregateLeft) out.push(aggPy(L, plan.aggregateLeft));
   if (plan.aggregateRight) out.push(aggPy(R, plan.aggregateRight));
-  out.push(`${L}["_jr_key"] = ${keyPy(L, j.left, cw)}`);
-  out.push(`${R}["_jr_key"] = ${keyPy(R, j.right, cw)}`);
+  // Several key columns become one text key joined with the unit separator, as in the SQL. A missing part makes it missing.
+  const sideKey = (df: string, refs: KeyRef[]) => refs.length === 1 ? keyPy(df, refs[0], cw) : refs.map((k) => `(${keyPy(df, k, cw)})`).join(' + "\\x1f" + ');
+  out.push(`${L}["_jr_key"] = ${sideKey(L, lrefs)}`);
+  out.push(`${R}["_jr_key"] = ${sideKey(R, rrefs)}`);
   out.push(`${R} = ${R}[${R}["_jr_key"].notna()]`);
   if (j.how === 'inner') out.push(`${L} = ${L}[${L}["_jr_key"].notna()]`);
   const rightUnique = j.receipt.max_per_key_right <= 1 || !!plan.aggregateRight;

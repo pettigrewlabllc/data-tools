@@ -1,7 +1,8 @@
 import type { Db } from './db';
-import type { Aggregate, AggFn } from './grammar';
+import { sideRefs, type Aggregate, type AggFn, type JoinOn } from './grammar';
 import type { TableProfile } from './profile';
 import { ident } from './sql/quote';
+import { keyExpr } from './sql/emit';
 import { joinParts, withCtes, type Plan } from './joinsql';
 import { describeTransforms } from './score';
 
@@ -49,30 +50,31 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
   const fanout = matchedLeft ? innerRows / matchedLeft : 1;
   const maxPerKeyRight = n(c.max_right);
 
-  const transformed = plan.join.left.transforms.length + plan.join.right.transforms.length > 0;
+  const allRefs = [...sideRefs(plan.join, 'left'), ...sideRefs(plan.join, 'right')];
+  const transformed = allRefs.some((k) => k.transforms.length > 0);
   let matchRateBefore: number | null = null;
   if (transformed) {
-    const raw = joinParts({ ...plan, join: { ...plan.join, left: { ...plan.join.left, transforms: [] }, right: { ...plan.join.right, transforms: [] } } }, profiles);
+    const raw = joinParts({ ...plan, join: stripTransforms(plan.join) }, profiles);
     const [b] = await db.query(withCtes([...raw.ctes, `RK AS (SELECT DISTINCT ${raw.rk} AS k FROM R AS r)`], `SELECT count(*) AS m FROM L AS l WHERE ${raw.lk} IN (SELECT k FROM RK)`));
     matchRateBefore = leftRows ? n(b.m) / leftRows : 0;
   }
 
   const samples: TransformSample[] = [];
-  for (const side of ['left', 'right'] as const) {
-    const ref = plan.join[side];
+  for (const side of ['left', 'right'] as const) for (const ref of sideRefs(plan.join, side)) {
     if (!ref.transforms.length) continue;
-    const alias = side === 'left' ? 'l' : 'r', key = side === 'left' ? p.lk : p.rk, src = side === 'left' ? 'L' : 'R';
+    const alias = side === 'left' ? 'l' : 'r', src = side === 'left' ? 'L' : 'R', key = keyExpr(ref, alias);
     const rows = await q(`SELECT raw, k FROM (SELECT DISTINCT CAST(${alias}.${ident(ref.column)} AS VARCHAR) AS raw, ${key} AS k FROM ${src} AS ${alias} WHERE ${alias}.${ident(ref.column)} IS NOT NULL) ORDER BY (raw = k) NULLS FIRST, hash(raw), raw LIMIT 5`);
     for (const r of rows) samples.push({ side, raw: String(r.raw), transformed: r.k == null ? null : String(r.k) });
   }
 
-  const patternsLeft = plan.aggregateLeft ? [] : await patterns(db, ctes, profiles, plan.join.left.table, plan.join.left.column, 'l', 'L', p.lk, 'RK', leftRows - matchedLeft);
+  const keyCols = (side: 'left' | 'right') => sideRefs(plan.join, side).map((k) => k.column);
+  const patternsLeft = plan.aggregateLeft ? [] : await patterns(db, ctes, profiles, plan.join.left.table, keyCols('left'), 'l', 'L', p.lk, 'RK', leftRows - matchedLeft);
   const unmatchedRight = rightRows - n(c.matched_right);
-  const patternsRight = plan.aggregateRight ? [] : await patterns(db, ctes, profiles, plan.join.right.table, plan.join.right.column, 'r', 'R', p.rk, 'LK', unmatchedRight);
+  const patternsRight = plan.aggregateRight ? [] : await patterns(db, ctes, profiles, plan.join.right.table, keyCols('right'), 'r', 'R', p.rk, 'LK', unmatchedRight);
 
   const fanoutWarning = fanout > FANOUT_WARN || maxPerKeyRight > 1;
   const rp = profiles.find((x) => x.table === plan.join.right.table);
-  const proposedAggregate = fanoutWarning && !plan.aggregateRight && rp ? proposeAggregate(rp, plan.join.right.column) : null;
+  const proposedAggregate = fanoutWarning && !plan.aggregateRight && rp ? proposeAggregate(rp, keyCols('right')) : null;
 
   return {
     leftRows, rightRows, joinedRows, innerRows,
@@ -80,21 +82,26 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     matchRateBefore, matchRateAfter: leftRows ? matchedLeft / leftRows : 0,
     fanout, maxPerKeyLeft: n(c.max_left), maxPerKeyRight, fanoutWarning,
     patternsLeft, patternsRight, samples,
-    normalisations: describeTransforms([...plan.join.left.transforms, ...plan.join.right.transforms]),
+    normalisations: describeTransforms(allRefs.flatMap((k) => k.transforms)),
     proposedAggregate,
     sql: withCtes(p.ctes, p.select),
   };
 }
 
+function stripTransforms(j: JoinOn): JoinOn {
+  const bare = <T extends { transforms: unknown[] }>(k: T): T => ({ ...k, transforms: [] });
+  return { ...j, left: bare(j.left), right: bare(j.right), ...(j.also ? { also: j.also.map((x) => ({ left: bare(x.left), right: bare(x.right) })) } : {}) };
+}
+
 /** Columns whose values are over-represented among the unmatched rows (lift = unmatched share ÷ overall share). */
 async function patterns(
-  db: Db, ctes: string[], profiles: TableProfile[], table: string, keyCol: string,
+  db: Db, ctes: string[], profiles: TableProfile[], table: string, keyCols: string[],
   alias: string, src: string, key: string, otherKeys: string, unmatchedTotal: number,
 ): Promise<Pattern[]> {
   if (unmatchedTotal < PATTERN_MIN_COUNT) return [];
   const prof = profiles.find((x) => x.table === table);
   if (!prof) return [];
-  const cols = prof.columns.filter((c) => c.name !== keyCol && c.distinct >= PATTERN_MIN_DISTINCT && c.distinct <= PATTERN_MAX_DISTINCT);
+  const cols = prof.columns.filter((c) => !keyCols.includes(c.name) && c.distinct >= PATTERN_MIN_DISTINCT && c.distinct <= PATTERN_MAX_DISTINCT);
   const total = prof.rows;
   const found: Pattern[] = [];
   for (const col of cols) {
@@ -124,11 +131,12 @@ export function describePattern(pt: Pattern): string {
 const NUMERIC = /INT|DOUBLE|DECIMAL|FLOAT|REAL/;
 
 /** Roll the many side up to one row per key: sum numbers, keep the first (smallest) value of everything else. */
-export function proposeAggregate(profile: TableProfile, keyColumn: string): Aggregate {
+export function proposeAggregate(profile: TableProfile, keyColumns: string | string[]): Aggregate {
+  const by = typeof keyColumns === 'string' ? [keyColumns] : keyColumns;
   const measures = profile.columns
-    .filter((c) => c.name !== keyColumn)
+    .filter((c) => !by.includes(c.name))
     .map((c) => ({ column: c.name, fn: (NUMERIC.test(c.type) && c.format !== 'integer_id' && c.format !== 'year' ? 'sum' : 'first') as AggFn }));
-  return { op: 'aggregate', table: profile.table, by: [keyColumn], measures };
+  return { op: 'aggregate', table: profile.table, by, measures };
 }
 
 /** A few raw key values from each side that found no match, for the AI payload and the card. */
@@ -139,12 +147,14 @@ export async function unmatchedExamples(db: Db, profiles: TableProfile[], plan: 
     `LK AS (SELECT DISTINCT ${p.lk} AS k FROM L AS l WHERE ${p.lk} IS NOT NULL)`,
     `RK AS (SELECT DISTINCT ${p.rk} AS k FROM R AS r WHERE ${p.rk} IS NOT NULL)`,
   ];
-  const side = async (alias: string, src: string, col: string, key: string, other: string) => {
-    const rows = await db.query(withCtes(ctes, `SELECT v FROM (SELECT DISTINCT CAST(${alias}.${ident(col)} AS VARCHAR) AS v FROM ${src} AS ${alias} WHERE ${alias}.${ident(col)} IS NOT NULL AND coalesce(${key} IN (SELECT k FROM ${other}), false) = false) ORDER BY hash(v), v LIMIT ${limit}`));
+  const side = async (alias: string, src: string, cols: string[], key: string, other: string) => {
+    const raw = cols.length === 1 ? `CAST(${alias}.${ident(cols[0])} AS VARCHAR)` : `concat_ws(' · ', ${cols.map((c) => `CAST(${alias}.${ident(c)} AS VARCHAR)`).join(', ')})`;
+    const present = cols.map((c) => `${alias}.${ident(c)} IS NOT NULL`).join(' AND ');
+    const rows = await db.query(withCtes(ctes, `SELECT v FROM (SELECT DISTINCT ${raw} AS v FROM ${src} AS ${alias} WHERE ${present} AND coalesce(${key} IN (SELECT k FROM ${other}), false) = false) ORDER BY hash(v), v LIMIT ${limit}`));
     return rows.map((r) => String(r.v));
   };
   return {
-    left: await side('l', 'L', plan.join.left.column, p.lk, 'RK'),
-    right: await side('r', 'R', plan.join.right.column, p.rk, 'LK'),
+    left: await side('l', 'L', sideRefs(plan.join, 'left').map((k) => k.column), p.lk, 'RK'),
+    right: await side('r', 'R', sideRefs(plan.join, 'right').map((k) => k.column), p.rk, 'LK'),
   };
 }

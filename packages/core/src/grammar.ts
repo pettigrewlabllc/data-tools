@@ -20,11 +20,22 @@ export interface KeyRef {
   transforms: Transform[];
 }
 
+export interface KeyPair { left: KeyRef; right: KeyRef }
+
 export interface JoinOn {
   op: 'join_on';
   left: KeyRef;
   right: KeyRef;
   how: 'inner' | 'left';
+  /** Extra key columns, for a key like county × year. Every pair must match. */
+  also?: KeyPair[];
+}
+
+export const MAX_EXTRA_KEYS = 2;
+
+/** Every key column on one side, primary first. */
+export function sideRefs(j: JoinOn, side: 'left' | 'right'): KeyRef[] {
+  return [j[side], ...(j.also ?? []).map((p) => p[side])];
 }
 
 export type AggFn = 'sum' | 'avg' | 'min' | 'max' | 'count' | 'first';
@@ -141,7 +152,7 @@ function validateKeyRef(x: unknown, schema: Schema): Validated<KeyRef> {
 
 export function validateJoinOn(x: unknown, schema: Schema): Validated<JoinOn> {
   if (!isObj(x)) return fail('join_on must be an object');
-  const e = exactKeys(x, ['op', 'left', 'right', 'how']);
+  const e = exactKeys(x, 'also' in x ? ['op', 'left', 'right', 'how', 'also'] : ['op', 'left', 'right', 'how']);
   if (e) return fail(e);
   if (x.op !== 'join_on') return fail('op must be join_on');
   if (x.how !== 'inner' && x.how !== 'left') return fail('how must be inner or left');
@@ -150,7 +161,27 @@ export function validateJoinOn(x: unknown, schema: Schema): Validated<JoinOn> {
   const r = validateKeyRef(x.right, schema);
   if (!r.ok) return r;
   if (l.value.table === r.value.table) return fail('a join needs two different tables');
-  return ok({ op: 'join_on', left: l.value, right: r.value, how: x.how });
+  const out: JoinOn = { op: 'join_on', left: l.value, right: r.value, how: x.how };
+  if ('also' in x) {
+    if (!Array.isArray(x.also) || x.also.length > MAX_EXTRA_KEYS) return fail(`also must be a list of at most ${MAX_EXTRA_KEYS} key pairs`);
+    const also: KeyPair[] = [];
+    const usedL = new Set([l.value.column]), usedR = new Set([r.value.column]);
+    for (const p of x.also) {
+      if (!isObj(p)) return fail('each extra key must be an object');
+      const pe = exactKeys(p, ['left', 'right']);
+      if (pe) return fail(pe);
+      const pl = validateKeyRef(p.left, schema);
+      if (!pl.ok) return pl;
+      const pr = validateKeyRef(p.right, schema);
+      if (!pr.ok) return pr;
+      if (pl.value.table !== l.value.table || pr.value.table !== r.value.table) return fail('extra keys must come from the same two tables');
+      if (usedL.has(pl.value.column) || usedR.has(pr.value.column)) return fail('each key column can only be used once');
+      usedL.add(pl.value.column); usedR.add(pr.value.column);
+      also.push({ left: pl.value, right: pr.value });
+    }
+    if (also.length) out.also = also;
+  }
+  return ok(out);
 }
 
 export function validateAggregate(x: unknown, schema: Schema): Validated<Aggregate> {
