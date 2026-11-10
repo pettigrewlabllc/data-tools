@@ -1,0 +1,117 @@
+/*
+ * Three candidate looks for Joel to pick from. Each is a skin over the same markup: tokens plus a few
+ * component rules, no layout changes. Pick one with ?look=till | ledger | lab. Once a look is chosen it
+ * moves into styles.css and this file goes.
+ */
+
+/* ---------- A. Till: the page is a thermal receipt ---------- */
+:root[data-look='till'] {
+  --bg: #e9e7e2;
+  --surface: #fbfbf8;
+  --paper: #ffffff;
+  --ink: #141414;
+  --muted: #5b5b5b;
+  --line: #cfccc4;
+  --accent: #141414;
+  --accent-ink: #ffffff;
+  --warn-bg: #fff1f0;
+  --warn-ink: #9e1b16;
+  --ok: #1b6b3a;
+  --bad: #b3261e;
+  --sans: var(--mono);
+  color-scheme: light;
+}
+:root[data-look='till'] body { font-size: 15px; }
+:root[data-look='till'] h1 { text-transform: uppercase; letter-spacing: 0.06em; font-size: clamp(1.9rem, 5vw, 2.6rem); }
+:root[data-look='till'] h2 { text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.05rem; border-bottom: 2px dashed var(--ink); padding-bottom: 6px; }
+:root[data-look='till'] .card,
+:root[data-look='till'] .file,
+:root[data-look='till'] .ai,
+:root[data-look='till'] .export,
+:root[data-look='till'] .drop {
+  border: none; border-radius: 0; box-shadow: 0 1px 0 var(--line), 0 6px 18px rgb(0 0 0 / 0.06);
+}
+/* Torn top and bottom edges on the receipt cards. */
+:root[data-look='till'] .card {
+  --tear: radial-gradient(circle at 8px 0, transparent 7px, var(--surface) 7.5px) 0 0 / 16px 100% repeat-x;
+  padding-top: 24px; padding-bottom: 24px;
+  -webkit-mask: linear-gradient(#000 0 0) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 8px 8px, #000 6px, transparent 6.5px) 0 0 / 16px 8px repeat-x,
+    radial-gradient(circle at 8px 0, #000 6px, transparent 6.5px) 0 100% / 16px 8px repeat-x;
+          mask: linear-gradient(#000 0 0) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 8px 8px, #000 6px, transparent 6.5px) 0 0 / 16px 8px repeat-x,
+    radial-gradient(circle at 8px 0, #000 6px, transparent 6.5px) 0 100% / 16px 8px repeat-x;
+}
+:root[data-look='till'] .paper { border: none; border-top: 2px dashed var(--ink); border-bottom: 2px dashed var(--ink); background: transparent; border-radius: 0; padding-left: 0; padding-right: 0; }
+:root[data-look='till'] .paper dl > div { border-bottom: 1px dotted var(--line); }
+:root[data-look='till'] .score-n { font-size: 2.2rem; }
+:root[data-look='till'] .card.is-approved { box-shadow: inset 0 0 0 3px var(--ok); }
+:root[data-look='till'] button, :root[data-look='till'] .button { border-radius: 0; border-color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem; }
+:root[data-look='till'] .chip { border-radius: 0; background: transparent; border: 1px solid var(--ink); }
+:root[data-look='till'] .fanout, :root[data-look='till'] .warn { border-left: 4px solid var(--bad); border-radius: 0; }
+
+/* ---------- B. Ledger: an accountant's book ---------- */
+:root[data-look='ledger'] {
+  --bg: #f3efe3;
+  --surface: #fbf8ef;
+  --paper: #fdfbf3;
+  --ink: #1d2a22;
+  --muted: #5d6a5f;
+  --line: #c9d6c3;
+  --accent: #1f5c3a;
+  --accent-ink: #f6f3e8;
+  --warn-bg: #fbe9e4;
+  --warn-ink: #8a2a1a;
+  --ok: #1f5c3a;
+  --bad: #a3321f;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  color-scheme: light;
+}
+:root[data-look='ledger'] h1, :root[data-look='ledger'] h2, :root[data-look='ledger'] h3 { font-family: var(--serif); font-weight: 600; letter-spacing: 0; }
+:root[data-look='ledger'] h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); }
+:root[data-look='ledger'] .lede { font-family: var(--serif); font-size: 1.22rem; }
+:root[data-look='ledger'] .card, :root[data-look='ledger'] .file, :root[data-look='ledger'] .ai, :root[data-look='ledger'] .export {
+  border-radius: 4px; border-color: var(--line); box-shadow: 0 1px 0 rgb(0 0 0 / 0.04);
+}
+/* One green rule per row and the red margin rule, like a ledger page. */
+:root[data-look='ledger'] .paper {
+  font-family: var(--sans); font-variant-numeric: tabular-nums; border-radius: 2px; padding-left: 30px;
+  background: linear-gradient(90deg, transparent 18px, #e0a39a 18px 19px, #e0a39a 21px 22px, transparent 22px) var(--paper);
+}
+:root[data-look='ledger'] .paper dl > div { border-bottom: 1px solid var(--line); }
+:root[data-look='ledger'] .paper dt { font-family: var(--serif); font-style: italic; }
+:root[data-look='ledger'] .score-n { font-family: var(--serif); }
+:root[data-look='ledger'] td.num, :root[data-look='ledger'] .score-n { font-variant-numeric: tabular-nums oldstyle-nums; }
+:root[data-look='ledger'] button.primary { border-radius: 4px; }
+:root[data-look='ledger'] .drop { border-style: solid; border-color: var(--line); }
+:root[data-look='ledger'] .chip { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+
+/* ---------- C. Lab: pettigrewlab.com's dark ink and emerald ---------- */
+:root[data-look='lab'] {
+  --bg: #0b0f0e;
+  --surface: #111816;
+  --paper: #0e1412;
+  --ink: #e6efe9;
+  --muted: #8fa39a;
+  --line: #22302b;
+  --accent: #34d399;
+  --accent-ink: #062018;
+  --warn-bg: #2a1d0c;
+  --warn-ink: #fbbf6a;
+  --ok: #34d399;
+  --bad: #f87171;
+  color-scheme: dark;
+}
+:root[data-look='lab'] h1 { font-family: var(--mono); letter-spacing: -0.02em; }
+:root[data-look='lab'] h1::before { content: '> '; color: var(--accent); }
+:root[data-look='lab'] h2 { font-family: var(--mono); font-size: 1.1rem; color: var(--accent); }
+:root[data-look='lab'] h2::before { content: '## '; color: var(--muted); }
+:root[data-look='lab'] .card, :root[data-look='lab'] .file, :root[data-look='lab'] .ai, :root[data-look='lab'] .export, :root[data-look='lab'] .drop {
+  border-color: var(--line); background: var(--surface);
+}
+:root[data-look='lab'] .paper { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: var(--paper); box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.04), 0 0 24px rgb(52 211 153 / 0.06); }
+:root[data-look='lab'] .paper dt { color: var(--accent); }
+:root[data-look='lab'] .score-n { color: var(--accent); }
+:root[data-look='lab'] .card.is-approved { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 28px rgb(52 211 153 / 0.15); }
+:root[data-look='lab'] code { background: color-mix(in srgb, var(--accent) 10%, transparent); color: #b7f5dc; }
+:root[data-look='lab'] .chip { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
