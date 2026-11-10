@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "sku"
+  },
+  "right": {
+    "table": "right",
+    "column": "product"
+  },
+  "family": "decoy",
+  "note": "shared year column; real key is sku"
+}

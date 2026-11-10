@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "fips"
+  },
+  "right": {
+    "table": "right",
+    "column": "fips"
+  },
+  "family": "drops",
+  "note": "all MA rows missing on the right"
+}

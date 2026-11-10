@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "fips"
+  },
+  "right": {
+    "table": "right",
+    "column": "fips"
+  },
+  "family": "unpadded",
+  "note": "fips (int) vs fips (zero-padded)"
+}

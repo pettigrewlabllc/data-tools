@@ -40,7 +40,7 @@ New repo `data-tools` (the family doc's recommended monorepo), npm workspaces:
 ```
 packages/core/            engine-agnostic library: plan types, SQL emit, profiling, keys, receipts, mapping.yml, Python emit, AI grammar
 packages/core-node/       Db adapter over @duckdb/node-api (tests, fixtures, future CLI)
-packages/join-receipt/    the web app (Vite + React + DuckDB-Wasm), dev port 3066
+packages/join-receipt/    the web app (Vite + React + DuckDB-Wasm), dev port 3067
 fixtures/join-receipt/    generator + labelled pairs + accuracy runner
 docs/adr/                 decision records
 ```
@@ -141,5 +141,5 @@ Each file that fails to load names the file and the DuckDB error in one line and
 2. **Excel deferred.** The npm `xlsx` package is frozen at 0.18.5 with known advisories, and the DuckDB Excel extension in Wasm is unverified. Better to ship four formats cleanly than parse untrusted spreadsheets with a stale library.
 3. **Synthetic samples** stand in for the federal datasets until you pick them (the PRD lists this as open).
 4. **Plain styling**, receipt-paper card. The look is yours to pick before launch.
-5. **Dev port 3066** (next free after stay-on-your-side's 3065).
+5. **Dev port 3067** (3066 is used by stay-on-your-side's native host, undocumented in the port table).
 6. **Providers:** Anthropic and OpenAI-compatible (covers Ollama, OpenAI, many local servers). Gemini later.

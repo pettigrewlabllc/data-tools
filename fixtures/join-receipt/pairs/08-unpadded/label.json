@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "geoid"
+  },
+  "right": {
+    "table": "right",
+    "column": "fips_code"
+  },
+  "family": "unpadded",
+  "note": "geoid (int) vs fips_code (zero-padded)"
+}

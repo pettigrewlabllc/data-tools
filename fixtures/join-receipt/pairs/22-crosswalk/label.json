@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "iso3"
+  },
+  "right": {
+    "table": "right",
+    "column": "nation"
+  },
+  "family": "crosswalk",
+  "note": "iso3 vs country name"
+}

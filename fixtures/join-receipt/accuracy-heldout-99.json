@@ -1,0 +1,43 @@
+{
+  "seed": "99",
+  "pairs": 41,
+  "top1": 1,
+  "noneCorrect": 1,
+  "overall": 1,
+  "families": {
+    "clean": {
+      "n": 6,
+      "correct": 6
+    },
+    "unpadded": {
+      "n": 5,
+      "correct": 5
+    },
+    "case": {
+      "n": 5,
+      "correct": 5
+    },
+    "crosswalk": {
+      "n": 6,
+      "correct": 6
+    },
+    "decoy": {
+      "n": 6,
+      "correct": 6
+    },
+    "grain": {
+      "n": 4,
+      "correct": 4
+    },
+    "drops": {
+      "n": 4,
+      "correct": 4
+    },
+    "none": {
+      "n": 5,
+      "correct": 5
+    }
+  },
+  "failures": [],
+  "synthetic": true
+}

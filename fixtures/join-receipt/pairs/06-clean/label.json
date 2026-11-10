@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "state"
+  },
+  "right": {
+    "table": "right",
+    "column": "st"
+  },
+  "family": "clean",
+  "note": "state abbr both sides"
+}

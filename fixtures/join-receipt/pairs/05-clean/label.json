@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "sku"
+  },
+  "right": {
+    "table": "right",
+    "column": "sku"
+  },
+  "family": "clean",
+  "note": "sku to sku"
+}

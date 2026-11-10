@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "id"
+  },
+  "right": {
+    "table": "right",
+    "column": "customer_id"
+  },
+  "family": "clean",
+  "note": "orders.customer_id to customers.id"
+}

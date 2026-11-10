@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "email"
+  },
+  "right": {
+    "table": "right",
+    "column": "contact_email"
+  },
+  "family": "decoy",
+  "note": "row-number ids on both sides; real key is email"
+}

@@ -1,0 +1,12 @@
+{
+  "left": {
+    "table": "left",
+    "column": "email"
+  },
+  "right": {
+    "table": "right",
+    "column": "email"
+  },
+  "family": "clean",
+  "note": "email to email"
+}
