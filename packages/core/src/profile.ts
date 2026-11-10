@@ -13,6 +13,9 @@ export interface TableProfile {
   table: string; file: string; rows: number; columns: ColumnProfile[]; grain: string[] | null;
   /** Excel only: which sheet and rows the table came from, and the CSV copy exports read. */
   sheet?: SheetRange; readFrom?: string;
+  /** The file was Windows-1252, not UTF-8. */
+  encoding?: 'windows-1252';
+  delimiter?: string;
 }
 
 export const SAMPLE_SIZE = 200;

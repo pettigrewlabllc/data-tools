@@ -3,7 +3,13 @@ import { ident, lit } from './sql/quote';
 import { excelToCsv, type SheetRange } from './excel';
 
 /** For an Excel file, `copy` is the CSV the table was read from. Exported SQL and pandas read that copy. */
-export interface LoadedTable { ok: true; name: string; file: string; rows: number; sheet?: SheetRange; copy?: { file: string; text: string } }
+export interface LoadedTable {
+  ok: true; name: string; file: string; rows: number; sheet?: SheetRange; copy?: { file: string; text: string };
+  /** Set when a text file wasn't UTF-8 and was read as Windows-1252 (Latin-1), as many federal CSVs are. */
+  encoding?: 'windows-1252';
+  /** The delimiter DuckDB detected, when it isn't a comma (Census code lists use |). */
+  delimiter?: string;
+}
 export interface LoadError { ok: false; file: string; error: string }
 
 export const SUPPORTED = ['.csv', '.tsv', '.txt', '.parquet', '.json', '.ndjson', '.jsonl', '.xlsx'];
@@ -19,11 +25,12 @@ export function tableNameFor(file: string, taken: Set<string>): string {
   return name;
 }
 
-export function readerFor(file: string, path: string): string | null {
+export function readerFor(file: string, path: string, encoding?: 'windows-1252'): string | null {
   const ext = file.toLowerCase().match(/\.[^.]+$/)?.[0] ?? '';
   const p = lit(path);
-  if (ext === '.csv' || ext === '.txt') return `read_csv_auto(${p}, sample_size=-1)`;
-  if (ext === '.tsv') return `read_csv_auto(${p}, sample_size=-1, delim='\\t')`;
+  const enc = encoding ? `, encoding='latin-1'` : '';
+  if (ext === '.csv' || ext === '.txt') return `read_csv_auto(${p}, sample_size=-1${enc})`;
+  if (ext === '.tsv') return `read_csv_auto(${p}, sample_size=-1, delim='\\t'${enc})`;
   if (ext === '.parquet') return `read_parquet(${p})`;
   if (ext === '.json' || ext === '.ndjson' || ext === '.jsonl') return `read_json_auto(${p})`;
   return null;
@@ -35,6 +42,7 @@ export async function loadFile(db: Db, file: string, bytes: Uint8Array, taken: S
   try {
     let sheet: SheetRange | undefined;
     let copy: LoadedTable['copy'];
+    let encoding: LoadedTable['encoding'];
     let reader: string | null;
     if (/\.xls$/i.test(short)) return { ok: false, file: short, error: 'this is the old .xls format; save it as .xlsx or CSV first' };
     if (/\.xlsx$/i.test(short)) {
@@ -46,7 +54,13 @@ export async function loadFile(db: Db, file: string, bytes: Uint8Array, taken: S
       reader = readerFor(copyName, db.resolve(copyName));
       copy = { file: copyName, text: t.csv };
     } else {
-      await db.registerFile(short, bytes);
+      // DuckDB reads UTF-8 only. Census and BLS CSVs are often Latin-1 ("Doña Ana County"), so convert those.
+      let data = bytes;
+      if (/\.(csv|tsv|txt|json|ndjson|jsonl)$/i.test(short) && !isUtf8(bytes)) {
+        data = new TextEncoder().encode(new TextDecoder('windows-1252').decode(bytes));
+        encoding = 'windows-1252';
+      }
+      await db.registerFile(short, data);
       reader = readerFor(short, db.resolve(short));
     }
     if (!reader) return { ok: false, file: short, error: `unsupported file type (use ${SUPPORTED.join(', ')})` };
@@ -58,9 +72,25 @@ export async function loadFile(db: Db, file: string, bytes: Uint8Array, taken: S
       throw e;
     }
     const [{ n }] = await db.query(`SELECT count(*) AS n FROM ${ident(name)}`);
-    return { ok: true, name, file: short, rows: Number(n), ...(sheet ? { sheet } : {}), ...(copy ? { copy } : {}) };
+    let delimiter: string | undefined;
+    if (/\.(csv|txt)$/i.test(short)) {
+      try {
+        const [s] = await db.query(`SELECT "Delimiter" AS d FROM sniff_csv(${lit(db.resolve(short))}, sample_size=-1)`);
+        if (s && typeof s.d === 'string' && s.d !== ',') delimiter = s.d;
+      } catch { /* sniffing is a nicety for the pandas export; the load already worked */ }
+    }
+    return { ok: true, name, file: short, rows: Number(n), ...(sheet ? { sheet } : {}), ...(copy ? { copy } : {}), ...(encoding ? { encoding } : {}), ...(delimiter ? { delimiter } : {}) };
   } catch (e) {
     return { ok: false, file: short, error: firstLine(e) };
+  }
+}
+
+export function isUtf8(bytes: Uint8Array): boolean {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return true;
+  } catch {
+    return false;
   }
 }
 

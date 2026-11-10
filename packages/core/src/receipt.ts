@@ -3,6 +3,7 @@ import { sideRefs, type Aggregate, type AggFn, type JoinOn } from './grammar';
 import type { TableProfile } from './profile';
 import { ident } from './sql/quote';
 import { keyExpr } from './sql/emit';
+import { formatFamily } from './formats';
 import { joinParts, withCtes, type Plan } from './joinsql';
 import { describeTransforms } from './score';
 
@@ -23,8 +24,11 @@ export interface Receipt {
 
 export const LIFT_MIN = 3;
 export const PATTERN_MIN_COUNT = 3;
+// The PRD (A5) excludes columns with fewer than 3 distinct values. On real Census data that hides SUMLEV,
+// the flag that marks state total rows, which is why 51 of 60 rows are left over there. Joel's call to change.
 export const PATTERN_MIN_DISTINCT = 3;
-export const PATTERN_MAX_DISTINCT = 50;
+// High enough for a state column once territories are in (57 values), which is what explains most real drops.
+export const PATTERN_MAX_DISTINCT = 100;
 export const FANOUT_WARN = 1.05;
 
 const n = (v: unknown) => Number(v ?? 0);
@@ -68,9 +72,11 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
   }
 
   const keyCols = (side: 'left' | 'right') => sideRefs(plan.join, side).map((k) => k.column);
-  const patternsLeft = plan.aggregateLeft ? [] : await patterns(db, ctes, profiles, plan.join.left.table, keyCols('left'), 'l', 'L', p.lk, 'RK', leftRows - matchedLeft);
+  // With a one-column key, the key can't explain its own drops. With several, the other parts can (State FIPS = 72).
+  const patternSkip = (side: 'left' | 'right') => (plan.join.also?.length ? [] : keyCols(side));
+  const patternsLeft = plan.aggregateLeft ? [] : await patterns(db, ctes, profiles, plan.join.left.table, patternSkip('left'), 'l', 'L', p.lk, 'RK', leftRows - matchedLeft);
   const unmatchedRight = rightRows - n(c.matched_right);
-  const patternsRight = plan.aggregateRight ? [] : await patterns(db, ctes, profiles, plan.join.right.table, keyCols('right'), 'r', 'R', p.rk, 'LK', unmatchedRight);
+  const patternsRight = plan.aggregateRight ? [] : await patterns(db, ctes, profiles, plan.join.right.table, patternSkip('right'), 'r', 'R', p.rk, 'LK', unmatchedRight);
 
   const fanoutWarning = fanout > FANOUT_WARN || maxPerKeyRight > 1;
   const rp = profiles.find((x) => x.table === plan.join.right.table);
@@ -101,7 +107,8 @@ async function patterns(
   if (unmatchedTotal < PATTERN_MIN_COUNT) return [];
   const prof = profiles.find((x) => x.table === table);
   if (!prof) return [];
-  const cols = prof.columns.filter((c) => !keyCols.includes(c.name) && c.distinct >= PATTERN_MIN_DISTINCT && c.distinct <= PATTERN_MAX_DISTINCT);
+  // Measures (rates, counts) are never the explanation for a drop, even when a value happens to repeat.
+  const cols = prof.columns.filter((c) => !keyCols.includes(c.name) && formatFamily(c.format) !== 'measure' && c.distinct >= PATTERN_MIN_DISTINCT && c.distinct <= PATTERN_MAX_DISTINCT);
   const total = prof.rows;
   const found: Pattern[] = [];
   for (const col of cols) {

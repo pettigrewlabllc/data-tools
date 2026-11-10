@@ -8,13 +8,13 @@ const pyVar = (s: string) => {
   return /^[0-9]/.test(v) ? `t_${v}` : v;
 };
 
-function reader(file: string, keyCols: string[]): string {
+function reader(file: string, keyCols: string[], encoding?: string, delimiter?: string): string {
   const ext = file.toLowerCase().match(/\.[^.]+$/)?.[0] ?? '';
-  const dtype = `dtype={${keyCols.map((c) => `${py(c)}: str`).join(', ')}}`;
+  const dtype = `dtype={${keyCols.map((c) => `${py(c)}: str`).join(', ')}}${encoding ? `, encoding="cp1252"` : ''}`;
   if (ext === '.parquet') return `pd.read_parquet(${py(file)}).astype({${keyCols.map((c) => `${py(c)}: "string"`).join(', ')}})`;
   if (ext === '.json' || ext === '.ndjson' || ext === '.jsonl') return `pd.read_json(${py(file)}, lines=${ext !== '.json' ? 'True' : 'False'}, ${dtype})`;
   if (ext === '.tsv') return `pd.read_csv(${py(file)}, sep="\\t", ${dtype}, keep_default_na=False, na_values=[""])`;
-  return `pd.read_csv(${py(file)}, ${dtype}, keep_default_na=False, na_values=[""])`;
+  return `pd.read_csv(${py(file)}, ${delimiter ? `sep=${py(delimiter)}, ` : ''}${dtype}, keep_default_na=False, na_values=[""])`;
 }
 
 /** Python mirroring sql/emit.ts transformSql exactly (DuckDB lpad truncates, so we slice too). */
@@ -48,6 +48,8 @@ function aggPy(df: string, a: Aggregate): string {
 export function emitPython(m: Mapping): string {
   const approved = m.joins.filter((j) => j.status === 'approved');
   const files = new Map(m.tables.map((t) => [t.name, t.read_from ?? t.file]));
+  const encs = new Map(m.tables.map((t) => [t.name, t.encoding]));
+  const delims = new Map(m.tables.map((t) => [t.name, t.delimiter]));
   const lines = [
     `# Join Receipt ${m.version}: generated from mapping.yml.`, `# Keys are compared as text, after the listed transforms; rows with no key never match.`,
     ...m.tables.filter((t) => t.read_from).map((t) => `# ${t.file} is read from ${t.read_from}, the CSV copy of sheet "${t.sheet?.name}" rows ${t.sheet?.header_row} to ${t.sheet?.last_row}. Download it next to this script.`),
@@ -65,7 +67,7 @@ export function emitPython(m: Mapping): string {
     return name;
   };
   const body: string[] = [];
-  for (const j of approved) body.push(...joinPy(j, files, cwVar));
+  for (const j of approved) body.push(...joinPy(j, files, cwVar, encs, delims));
   return [...lines, ...crosswalks.values(), ...(crosswalks.size ? [''] : []), ...body].join('\n') + '\n';
 }
 
@@ -75,14 +77,14 @@ function keyPy(df: string, k: KeyRef, cw: (t: Extract<Transform, { op: 'crosswal
   return x;
 }
 
-function joinPy(j: MappingJoin, files: Map<string, string>, cw: (t: Extract<Transform, { op: 'crosswalk' }>) => string): string[] {
+function joinPy(j: MappingJoin, files: Map<string, string>, cw: (t: Extract<Transform, { op: 'crosswalk' }>) => string, encs: Map<string, string | undefined> = new Map(), delims: Map<string, string | undefined> = new Map()): string[] {
   const plan = planOf(j);
   const L = `${pyVar(j.left.table)}_df`, R = `${pyVar(j.right.table)}_df`;
   const lrefs = sideRefs(plan.join, 'left'), rrefs = sideRefs(plan.join, 'right');
   const out = [
     `# ${j.id}`,
-    `${L} = ${reader(files.get(j.left.table) ?? j.left.table, lrefs.map((k) => k.column))}`,
-    `${R} = ${reader(files.get(j.right.table) ?? j.right.table, rrefs.map((k) => k.column))}`,
+    `${L} = ${reader(files.get(j.left.table) ?? j.left.table, lrefs.map((k) => k.column), encs.get(j.left.table), delims.get(j.left.table))}`,
+    `${R} = ${reader(files.get(j.right.table) ?? j.right.table, rrefs.map((k) => k.column), encs.get(j.right.table), delims.get(j.right.table))}`,
   ];
   if (plan.aggregateLeft) out.push(aggPy(L, plan.aggregateLeft));
   if (plan.aggregateRight) out.push(aggPy(R, plan.aggregateRight));

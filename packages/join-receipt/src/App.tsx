@@ -68,7 +68,12 @@ export function App() {
         setStatus(`Profiling ${f.name}…`);
         const prof = await profileTable(d, r.name, r.file);
         if (r.copy) copiesRef.current.set(r.copy.file, r.copy.text);
-        profs.push(r.sheet && r.copy ? { ...prof, sheet: r.sheet, readFrom: r.copy.file } : prof);
+        profs.push({
+          ...prof,
+          ...(r.sheet && r.copy ? { sheet: r.sheet, readFrom: r.copy.file } : {}),
+          ...(r.encoding ? { encoding: r.encoding } : {}),
+          ...(r.delimiter ? { delimiter: r.delimiter } : {}),
+        });
       }
       setErrors(errs);
       setProfiles(profs);
