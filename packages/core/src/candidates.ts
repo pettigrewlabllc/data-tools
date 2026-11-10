@@ -110,11 +110,30 @@ export async function candidatesForPair(db: Db, lp: TableProfile, rp: TableProfi
     if (best) found.push(best);
   }
   found.sort((a, b) => b.score - a.score || a.left.column.localeCompare(b.left.column) || a.right.column.localeCompare(b.right.column));
+  dropDominatedLookups(found);
   const composite = await compositeCandidate(db, lp, rp, found);
   if (composite) found.unshift(composite);
   const top = found[0];
   const reliable = !!top && top.score >= RELIABLE_SCORE && Math.max(top.features.containLeft, top.features.containRight) >= RELIABLE_CONTAINMENT;
   return { left: lp.table, right: rp.table, best: found.slice(0, 3), reliable };
+}
+
+const usesLookup = (c: { left: KeyRef; right: KeyRef; also?: KeyPair[] }) =>
+  [c.left, c.right, ...(c.also ?? []).flatMap((p) => [p.left, p.right])].some((k) => k.transforms.some((t) => t.op === 'crosswalk'));
+
+/**
+ * A lookup (state abbr → FIPS) only translates information a file may already have. If another key on the
+ * same pair matches at least as many values without a lookup and is just as unique, the lookup key goes.
+ * Found on real Census files: STATE (AL) via a lookup outscored STATEFP (01) on name similarity alone.
+ */
+export function dropDominatedLookups(found: JoinCandidate[]): void {
+  for (let i = found.length - 1; i >= 0; i--) {
+    const a = found[i];
+    if (!usesLookup(a)) continue;
+    const better = found.some((b) => b !== a && !usesLookup(b) && b.features.overlap >= a.features.overlap
+      && (b.features.leftUnique || !a.features.leftUnique) && (b.features.rightUnique || !a.features.rightUnique));
+    if (better) found.splice(i, 1);
+  }
 }
 
 /** Is a several-column key, after its cleanup, one row per key with no missing parts? */
@@ -133,7 +152,7 @@ async function compositeCandidate(db: Db, lp: TableProfile, rp: TableProfile, fo
   const base = found[0];
   if (!base || (base.features.leftUnique && base.features.rightUnique)) return null;
   const keyish = (c: ColumnProfile) => joinable(c.format) && c.nulls === 0 && c.distinct >= 2 && formatFamily(c.format) !== 'measure';
-  let best: JoinCandidate | null = null;
+  const options: JoinCandidate[] = [];
   let tried = 0;
   for (const lo of lp.columns) for (const ro of rp.columns) {
     if (lo.name === base.left.column || ro.name === base.right.column || !keyish(lo) || !keyish(ro)) continue;
@@ -158,10 +177,12 @@ async function compositeCandidate(db: Db, lp: TableProfile, rp: TableProfile, fo
       };
       if (!features.leftUnique && !features.rightUnique) continue;
       const { score, reason } = scoreCandidate(features, base.left, base.right, also);
-      if (score > base.score && (!best || score > best.score)) best = { left: base.left, right: base.right, also, features, score, reason };
+      if (score > base.score) options.push({ left: base.left, right: base.right, also, features, score, reason });
     }
   }
-  return best;
+  options.sort((a, b) => b.score - a.score);
+  dropDominatedLookups(options);
+  return options[0] ?? null;
 }
 
 export async function findCandidates(db: Db, profiles: TableProfile[]): Promise<CandidateResult> {

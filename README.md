@@ -11,6 +11,7 @@ npm install
 npm run dev          # http://localhost:3067, click "Try the sample data"
 npm test             # 48 tests against real DuckDB
 npm run accuracy     # scores the labelled join set, writes fixtures/join-receipt/accuracy.json
+npm run accuracy:real  # the same on real Census and BLS files, writes accuracy-real.json
 ```
 
 To check the AI path against a real model on your own machine (Ollama by default, nothing leaves it): `JR_LIVE_MODEL=<ollama model> npx vitest run packages/core/test/ai-live.test.ts`.
@@ -49,7 +50,21 @@ On localhost, Ollama answers the page as is. From a deployed copy it only answer
 
 Current result: **41 of 41** (36 of 36 keyed pairs ranked first, 5 of 5 "no reliable join" correctly called). Two seeds the scorer was never tuned on also score 41 of 41.
 
-Read that number for what it is. The first run scored 94.4%, and the two misses led to classifier fixes. The set is synthetic, and the same person wrote the generator and the scorer. It shows the engine does what it's designed to do. It doesn't prove it works on your data yet. Real public datasets (Census, BLS) are the next thing to add to the set.
+Read that number for what it is. The first run scored 94.4%, and the two misses led to classifier fixes. The set is synthetic, and the same person wrote the generator and the scorer. It shows the engine does what it's designed to do. It doesn't prove it works on your data.
+
+### On real files
+
+`npm run accuracy:real` runs six pairs built from four files nobody here made: the Census 2020 county and state code lists, the Census 2024 county population estimates, and the BLS 2024 county unemployment workbook. The sources are in [fixtures/join-receipt/real/pairs.json](fixtures/join-receipt/real/pairs.json). The expected key for each pair was written down from how Census and BLS document their files, before the engine ran on them.
+
+Current result: **6 of 6**. The first run got **3 of 6**, and that's the number worth knowing. All three misses were the same mistake. It joined a state abbreviation (`AL`) through a lookup table when the same file had the FIPS code (`01`) sitting right there, because "STATE" = "STATE" looked like a better name match. Now a lookup key is dropped when a direct column matches at least as many values. The same run also turned up two load bugs that real users would have hit first: the Census CSV is Latin-1 ("Doña Ana County"), which DuckDB won't read, and the code lists are pipe-delimited, which the pandas export didn't handle. Both are fixed.
+
+What the receipts say on these files is the better test, and they hold up:
+
+- BLS against Census population: the key is state × county FIPS. "All 78 unmatched rows have State FIPS Code = 72." That's Puerto Rico, which BLS covers and the population estimates don't.
+- BLS against the 2020 code list: "All 9 unmatched rows have State FIPS Code = 09." That's Connecticut, which swapped its counties for planning regions after 2020.
+- The population file also mixes 51 state total rows in with the counties. Those show up as left over, but nothing explains them yet, because the flag that marks them (`SUMLEV`) has two values and the PRD keeps columns under three out of the explanations.
+
+Six pairs is a small set. It's real, though, and it's the number to quote.
 
 ## Limits right now
 

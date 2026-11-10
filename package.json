@@ -9,6 +9,7 @@
     "test": "vitest run",
     "typecheck": "tsc -p packages/core && tsc -p packages/core-node && tsc -p packages/join-receipt --noEmit",
     "accuracy": "tsx fixtures/join-receipt/accuracy.ts",
+    "accuracy:real": "tsx fixtures/join-receipt/real-accuracy.ts",
     "fixtures": "tsx fixtures/join-receipt/generate.ts",
     "dev": "npm run dev -w join-receipt"
   },

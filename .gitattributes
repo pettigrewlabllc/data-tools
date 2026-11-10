@@ -1,0 +1,2 @@
+# Real public files are kept byte for byte (one is Latin-1).
+fixtures/join-receipt/real/files/** -text

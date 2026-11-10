@@ -1,0 +1,46 @@
+{
+  "about": "Real public files, unmodified except that census_popest_county_2024.csv keeps 9 of its 80 columns (all rows, original Latin-1 encoding). Labels were written from how each publisher documents its keys, before the engine was run on these files. `accept` lists every key the label counts as right.",
+  "sources": {
+    "census_counties_2020.txt": "U.S. Census Bureau, 2020 FIPS county codes, https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
+    "census_states_2020.txt": "U.S. Census Bureau, 2020 FIPS state codes, https://www2.census.gov/geo/docs/reference/codes2020/national_state2020.txt",
+    "census_popest_county_2024.csv": "U.S. Census Bureau, county population totals 2020-2024 (Vintage 2024), https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv",
+    "bls_laus_county_2024.xlsx": "U.S. Bureau of Labor Statistics, LAUS county annual averages 2024, https://www.bls.gov/lau/laucnty24.xlsx"
+  },
+  "downloaded": "2026-11-09",
+  "pairs": [
+    {
+      "id": "r1-codes-vs-popest", "family": "real-two-column",
+      "left": "census_counties_2020.txt", "right": "census_popest_county_2024.csv",
+      "accept": ["COUNTYFP × STATEFP ↔ COUNTY × STATE"],
+      "note": "County code 001 exists in most states, so the county code alone repeats. The popest file also has a state total row per state (COUNTY = 000), and Connecticut's 2024 rows use planning regions that the 2020 code list doesn't have."
+    },
+    {
+      "id": "r2-laus-vs-popest", "family": "real-two-column",
+      "left": "bls_laus_county_2024.xlsx", "right": "census_popest_county_2024.csv",
+      "accept": ["County FIPS Code × State FIPS Code ↔ COUNTY × STATE"],
+      "note": "Excel with a title row vs Latin-1 CSV. LAUS also has Puerto Rico, which popest doesn't."
+    },
+    {
+      "id": "r3-laus-vs-codes", "family": "real-two-column",
+      "left": "bls_laus_county_2024.xlsx", "right": "census_counties_2020.txt",
+      "accept": ["County FIPS Code × State FIPS Code ↔ COUNTYFP × STATEFP"],
+      "note": "Excel vs pipe-delimited text."
+    },
+    {
+      "id": "r4-states-vs-popest", "family": "real-one-column",
+      "left": "census_states_2020.txt", "right": "census_popest_county_2024.csv",
+      "accept": ["STATEFP ↔ STATE", "STATE_NAME ↔ STNAME"],
+      "note": "One row per state on the left, one per county (plus state totals) on the right, so the join fans out."
+    },
+    {
+      "id": "r5-states-vs-laus", "family": "real-one-column",
+      "left": "census_states_2020.txt", "right": "bls_laus_county_2024.xlsx",
+      "accept": ["STATEFP ↔ State FIPS Code"]
+    },
+    {
+      "id": "r6-states-vs-codes", "family": "real-one-column",
+      "left": "census_states_2020.txt", "right": "census_counties_2020.txt",
+      "accept": ["STATEFP ↔ STATEFP", "STATE ↔ STATE"]
+    }
+  ]
+}

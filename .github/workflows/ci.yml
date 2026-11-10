@@ -18,4 +18,6 @@ jobs:
       - run: JR_PYTHON=$(which python) npm test
       - run: npm run accuracy
       - run: git diff --exit-code fixtures/join-receipt/accuracy.json
+      - run: npm run accuracy:real
+      - run: git diff --exit-code fixtures/join-receipt/accuracy-real.json
       - run: npm run build -w join-receipt

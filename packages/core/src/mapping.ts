@@ -23,15 +23,21 @@ export interface MappingTable {
   name: string; file: string; grain: string[] | null;
   /** Excel only. The scripts read `read_from`, the CSV copy of the table Join Receipt found in `sheet`. */
   sheet?: { name: string; header_row: number; last_row: number }; read_from?: string;
+  /** Set when the file is Windows-1252 (Latin-1) rather than UTF-8. */
+  encoding?: 'windows-1252';
+  /** Set when the delimiter isn't a comma. */
+  delimiter?: string;
 }
 export interface Mapping { tool: string; version: string; tables: MappingTable[]; joins: MappingJoin[] }
 
 /** The mapping's table entry for a profile. */
-export function mappingTable(p: { table: string; file: string; grain: string[] | null; sheet?: { sheet: string; headerRow: number; lastRow: number }; readFrom?: string }): MappingTable {
+export function mappingTable(p: { table: string; file: string; grain: string[] | null; sheet?: { sheet: string; headerRow: number; lastRow: number }; readFrom?: string; encoding?: 'windows-1252'; delimiter?: string }): MappingTable {
   return {
     name: p.table, file: p.file, grain: p.grain,
     ...(p.sheet ? { sheet: { name: p.sheet.sheet, header_row: p.sheet.headerRow, last_row: p.sheet.lastRow } } : {}),
     ...(p.readFrom ? { read_from: p.readFrom } : {}),
+    ...(p.encoding ? { encoding: p.encoding } : {}),
+    ...(p.delimiter ? { delimiter: p.delimiter } : {}),
   };
 }
 
@@ -52,6 +58,8 @@ export function canonical(m: Mapping): Mapping {
       name: t.name, file: t.file, grain: t.grain ? [...t.grain] : null,
       ...(t.sheet ? { sheet: { name: t.sheet.name, header_row: t.sheet.header_row, last_row: t.sheet.last_row } } : {}),
       ...(t.read_from ? { read_from: t.read_from } : {}),
+      ...(t.encoding ? { encoding: t.encoding } : {}),
+      ...(t.delimiter ? { delimiter: t.delimiter } : {}),
     })),
     joins: m.joins.map((j) => ({
       id: j.id,

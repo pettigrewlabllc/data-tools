@@ -1,0 +1,155 @@
+{
+  "synthetic": false,
+  "pairs": 6,
+  "correct": 6,
+  "top1": 1,
+  "results": [
+    {
+      "id": "r1-codes-vs-popest",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "COUNTYFP × STATEFP ↔ COUNTY × STATE",
+      "accept": [
+        "COUNTYFP × STATEFP ↔ COUNTY × STATE"
+      ],
+      "score": 84,
+      "reason": "97% of census_counties_2020 keys found in census_popest_county_2024; each file has one row per key (STATEFP × COUNTYFP = STATE × COUNTY).",
+      "receipt": {
+        "matched": "3135 of 3235",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9690880989180835,
+        "leftOver": "60 of 3195",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "78 of 100 unmatched rows have STATE = PR (PR is 2% of the file).",
+          "78 of 100 unmatched rows have STATEFP = 72 (72 is 2% of the file)."
+        ],
+        "patternsRight": [
+          "10 of 60 unmatched rows have STATE = 09 (09 is <1% of the file).",
+          "10 of 60 unmatched rows have STNAME = Connecticut (Connecticut is <1% of the file)."
+        ]
+      }
+    },
+    {
+      "id": "r2-laus-vs-popest",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "County FIPS Code × State FIPS Code ↔ COUNTY × STATE",
+      "accept": [
+        "County FIPS Code × State FIPS Code ↔ COUNTY × STATE"
+      ],
+      "score": 89,
+      "reason": "98% of bls_laus_county_2024 keys found in census_popest_county_2024; each file has one row per key (County FIPS Code × State FIPS Code = COUNTY × STATE).",
+      "receipt": {
+        "matched": "3143 of 3221",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9757839180378765,
+        "leftOver": "52 of 3195",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "All 78 unmatched rows have State FIPS Code = 72 (72 is 2% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r3-laus-vs-codes",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "County FIPS Code × State FIPS Code ↔ COUNTYFP × STATEFP",
+      "accept": [
+        "County FIPS Code × State FIPS Code ↔ COUNTYFP × STATEFP"
+      ],
+      "score": 85,
+      "reason": "100% of bls_laus_county_2024 keys found in census_counties_2020; each file has one row per key (County FIPS Code × State FIPS Code = COUNTYFP × STATEFP).",
+      "receipt": {
+        "matched": "3212 of 3221",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9972058366966781,
+        "leftOver": "23 of 3235",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "All 9 unmatched rows have State FIPS Code = 09 (09 is <1% of the file)."
+        ],
+        "patternsRight": [
+          "8 of 23 unmatched rows have STATE = CT (CT is <1% of the file).",
+          "8 of 23 unmatched rows have STATEFP = 09 (09 is <1% of the file)."
+        ]
+      }
+    },
+    {
+      "id": "r4-states-vs-popest",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATE_NAME ↔ STNAME",
+      "accept": [
+        "STATEFP ↔ STATE",
+        "STATE_NAME ↔ STNAME"
+      ],
+      "score": 85,
+      "reason": "89% of census_states_2020 keys found in census_popest_county_2024; census_states_2020.STATE_NAME is unique.",
+      "receipt": {
+        "matched": "51 of 57",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.8947368421052632,
+        "leftOver": "0 of 3195",
+        "fanout": 62.65,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r5-states-vs-laus",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATEFP ↔ State FIPS Code",
+      "accept": [
+        "STATEFP ↔ State FIPS Code"
+      ],
+      "score": 85,
+      "reason": "91% of census_states_2020 keys found in bls_laus_county_2024; census_states_2020.STATEFP is unique.",
+      "receipt": {
+        "matched": "52 of 57",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9122807017543859,
+        "leftOver": "0 of 3221",
+        "fanout": 61.94,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r6-states-vs-codes",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATE ↔ STATE",
+      "accept": [
+        "STATEFP ↔ STATEFP",
+        "STATE ↔ STATE"
+      ],
+      "score": 100,
+      "reason": "100% of census_states_2020 keys found in census_counties_2020; census_states_2020.STATE is unique; names match (STATE ↔ STATE).",
+      "receipt": {
+        "matched": "57 of 57",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "0 of 3235",
+        "fanout": 56.75,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    }
+  ]
+}
