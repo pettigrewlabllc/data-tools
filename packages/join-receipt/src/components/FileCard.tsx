@@ -14,6 +14,7 @@ export function FileCard({ profile, grain }: { profile: TableProfile; grain: str
       <header>
         <h3 id={`f-${profile.table}`}>{profile.file}</h3>
         <p className="meta">{fmt(profile.rows)} rows · {grain}</p>
+        {profile.warning && <p className="warn" role="note">{profile.warning}</p>}
         {profile.sheet && (
           <p className="meta">
             From sheet "{profile.sheet.sheet}", header on row {profile.sheet.headerRow}, data through row {profile.sheet.lastRow}.
@@ -21,7 +22,7 @@ export function FileCard({ profile, grain }: { profile: TableProfile; grain: str
           </p>
         )}
       </header>
-      <div className="table-wrap">
+      <div className="table-wrap" tabIndex={0} role="region" aria-label={`Columns in ${profile.file}`}>
         <table>
           <thead><tr><th scope="col">Column</th><th scope="col">Looks like</th><th scope="col">Distinct</th><th scope="col">Empty</th></tr></thead>
           <tbody>

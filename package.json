@@ -11,9 +11,12 @@
     "accuracy": "tsx fixtures/join-receipt/accuracy.ts",
     "accuracy:real": "tsx fixtures/join-receipt/real-accuracy.ts",
     "fixtures": "tsx fixtures/join-receipt/generate.ts",
-    "dev": "npm run dev -w join-receipt"
+    "dev": "npm run dev -w join-receipt",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.62.1",
     "@types/node": "^26.6.6",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

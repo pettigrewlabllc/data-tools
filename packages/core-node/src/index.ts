@@ -20,6 +20,11 @@ export async function createNodeDb(): Promise<Db> {
       const p = join(dir, `${paths.size}-${safe}`);
       writeFileSync(p, bytes);
       paths.set(name, p);
+      // DuckDB-Wasm transfers the buffer to its worker, leaving the caller's copy detached. Do the same here,
+      // so code that touches the bytes after registering them fails in tests, not only in the browser.
+      if (bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength && bytes.buffer instanceof ArrayBuffer) {
+        structuredClone(bytes.buffer, { transfer: [bytes.buffer] });
+      }
     },
     resolve(name) {
       const p = paths.get(name);

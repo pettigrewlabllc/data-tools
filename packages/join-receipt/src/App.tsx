@@ -73,6 +73,7 @@ export function App() {
           ...(r.sheet && r.copy ? { sheet: r.sheet, readFrom: r.copy.file } : {}),
           ...(r.encoding ? { encoding: r.encoding } : {}),
           ...(r.delimiter ? { delimiter: r.delimiter } : {}),
+          ...(r.warning ? { warning: r.warning } : {}),
         });
       }
       setErrors(errs);
