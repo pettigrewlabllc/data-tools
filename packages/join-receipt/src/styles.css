@@ -1,41 +1,44 @@
-/* Deliberately plain. The look is Joel's to pick before launch; the receipt paper is the only opinion. */
+/* Till: the page is a thermal receipt. Monospace, torn edges, black ink, red only for problems. Joel's pick, 2026-11-09. */
 :root {
-  --bg: #f6f5f1;
-  --surface: #ffffff;
-  --paper: #fffdf6;
-  --ink: #1c1d1f;
-  --muted: #5d6066;
-  --line: #dcd9d0;
-  --accent: #1f5fbf;
+  --bg: #e9e7e2;
+  --surface: #fbfbf8;
+  --paper: #ffffff;
+  --ink: #141414;
+  --muted: #5b5b5b;
+  --line: #cfccc4;
+  --accent: #141414;
   --accent-ink: #ffffff;
-  --warn-bg: #fff4e0;
-  --warn-ink: #7a4300;
-  --ok: #1d7a46;
-  --bad: #a3322a;
+  --warn-bg: #fff1f0;
+  --warn-ink: #9e1b16;
+  --ok: #1b6b3a;
+  --bad: #b3261e;
+  --shadow: rgb(0 0 0 / 0.06);
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sans: var(--mono);
   color-scheme: light;
 }
+/* Dark: the same receipt printed white on black. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #141517;
-    --surface: #1d1f22;
-    --paper: #23221e;
+    --bg: #0e0e0e;
+    --surface: #1a1a19;
+    --paper: #1a1a19;
     --ink: #ecebe6;
-    --muted: #a4a7ad;
-    --line: #34363a;
-    --accent: #6ea4ff;
-    --accent-ink: #0d1420;
-    --warn-bg: #3a2a10;
-    --warn-ink: #ffcf87;
-    --ok: #67d39a;
+    --muted: #a3a29c;
+    --line: #3a3936;
+    --accent: #ecebe6;
+    --accent-ink: #141414;
+    --warn-bg: #2b1513;
+    --warn-ink: #ff9b91;
+    --ok: #6fd39a;
     --bad: #ff8a80;
+    --shadow: rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); }
 code, pre { font-family: var(--mono); font-size: 0.88em; }
 code { background: color-mix(in srgb, var(--line) 45%, transparent); padding: 0 0.3em; border-radius: 3px; overflow-wrap: anywhere; }
 h1, h2, h3 { line-height: 1.2; margin: 0 0 0.4em; }
@@ -155,3 +158,31 @@ legend { color: var(--muted); padding: 0 4px; }
   .paper dl > div { grid-template-columns: 1fr; gap: 2px; }
   .by { margin-left: 0; width: 100%; }
 }
+
+/* ---------- Till ---------- */
+h1 { text-transform: uppercase; letter-spacing: 0.06em; font-size: clamp(1.9rem, 5vw, 2.6rem); }
+h2 { text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.05rem; border-bottom: 2px dashed var(--ink); padding-bottom: 6px; }
+.card, .file, .ai, .export, .drop { border: none; border-radius: 0; box-shadow: 0 1px 0 var(--line), 0 6px 18px var(--shadow); }
+.drop { outline: 2px dashed var(--line); outline-offset: -8px; }
+.drop.is-dragging { outline-color: var(--ink); }
+/* Torn top and bottom edges on the receipt cards. */
+.card {
+  padding-top: 24px; padding-bottom: 24px;
+  -webkit-mask: linear-gradient(#000 0 0) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 8px 8px, #000 6px, transparent 6.5px) 0 0 / 16px 8px repeat-x,
+    radial-gradient(circle at 8px 0, #000 6px, transparent 6.5px) 0 100% / 16px 8px repeat-x;
+          mask: linear-gradient(#000 0 0) 0 8px / 100% calc(100% - 16px) no-repeat,
+    radial-gradient(circle at 8px 8px, #000 6px, transparent 6.5px) 0 0 / 16px 8px repeat-x,
+    radial-gradient(circle at 8px 0, #000 6px, transparent 6.5px) 0 100% / 16px 8px repeat-x;
+}
+.paper { border: none; border-top: 2px dashed var(--ink); border-bottom: 2px dashed var(--ink); background: transparent; border-radius: 0; padding-left: 0; padding-right: 0; }
+.paper dl > div { border-bottom: 1px dotted var(--line); }
+.score-n { font-size: 2.2rem; }
+.card.is-approved { box-shadow: inset 0 0 0 3px var(--ok); }
+button, .button { border-radius: 0; border-color: var(--ink); }
+/* Short actions are stamped in capitals. Anything with a file or column name in it keeps its case. */
+.drop-actions button:not(.quiet), .drop-actions .button, .decide button:not(.quiet) { text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem; }
+.chip { border-radius: 0; background: transparent; border: 1px solid var(--ink); }
+.fanout, .warn { border-left: 4px solid var(--bad); border-radius: 0; }
+.tabs button { border-radius: 0; }
+code.colname { overflow-wrap: normal; word-break: keep-all; }

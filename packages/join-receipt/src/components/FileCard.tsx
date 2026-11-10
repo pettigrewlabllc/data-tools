@@ -3,6 +3,11 @@ import { FORMAT_LABEL, type TableProfile } from '@data-tools/core';
 const fmt = (n: number) => n.toLocaleString('en-US');
 const pct = (x: number) => (x === 0 ? '0%' : x < 0.01 ? '<1%' : `${Math.round(x * 100)}%`);
 
+/** Let long column names wrap after an underscore or space, never in the middle of a word. */
+function breakable(name: string) {
+  return name.split(/(?<=[_ ])/).map((part, i) => <span key={i}>{part}{i < name.length ? <wbr /> : null}</span>);
+}
+
 export function FileCard({ profile, grain }: { profile: TableProfile; grain: string }) {
   return (
     <article className="file" aria-labelledby={`f-${profile.table}`}>
@@ -22,7 +27,7 @@ export function FileCard({ profile, grain }: { profile: TableProfile; grain: str
           <tbody>
             {profile.columns.map((c) => (
               <tr key={c.name}>
-                <th scope="row"><code>{c.name}</code>{c.unique && <span className="tag" title="Every row has a different value">unique</span>}</th>
+                <th scope="row"><code className="colname">{breakable(c.name)}</code>{c.unique && <span className="tag" title="Every row has a different value">unique</span>}</th>
                 <td><span className={`chip f-${c.format}`}>{FORMAT_LABEL[c.format]}</span></td>
                 <td className="num">{fmt(c.distinct)}</td>
                 <td className="num">{pct(c.nullPct)}</td>

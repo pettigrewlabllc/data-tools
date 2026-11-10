@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   loadFile, profileTable, findCandidates, buildReceipt, unmatchedExamples, grainLabel,
   type TableProfile, type PairResult, type Plan, type Receipt, type LoadError, type Draft,
@@ -105,6 +105,14 @@ export function App() {
   const reset = () => {
     window.location.reload();
   };
+
+  // ?sample=1 loads the sample data straight away, for screenshots and the look picker.
+  const autoloaded = useRef(false);
+  useEffect(() => {
+    if (autoloaded.current || new URLSearchParams(location.search).get('sample') !== '1') return;
+    autoloaded.current = true;
+    void loadAll(sampleFiles());
+  }, []);
 
   const onDrafts = (id: string, drafts: Draft[], llm: Card['llm']) => update(id, { drafts, llm });
 
