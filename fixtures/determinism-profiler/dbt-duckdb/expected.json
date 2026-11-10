@@ -1,0 +1,18 @@
+{
+  "input": ".",
+  "origins": [
+    "model.dp_fixture.sampled_orders"
+  ],
+  "inherited": [
+    "model.dp_fixture.region_report"
+  ],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "models/sampled_orders.sql:4",
+      "cause": "unseeded_sample",
+      "status": "confirmed"
+    }
+  ],
+  "score": 60
+}

@@ -1,0 +1,10 @@
+name: dp_fixture
+version: '1.0'
+config-version: 2
+profile: dp_fixture
+model-paths: [models]
+seed-paths: [seeds]
+target-path: target
+models:
+  dp_fixture:
+    +materialized: table

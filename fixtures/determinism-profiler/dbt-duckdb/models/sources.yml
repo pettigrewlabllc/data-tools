@@ -1,0 +1,7 @@
+version: 2
+sources:
+  - name: raw
+    meta:
+      external_location: "read_csv('data/{name}.csv')"
+    tables:
+      - name: orders

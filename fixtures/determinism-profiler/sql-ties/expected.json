@@ -1,0 +1,23 @@
+{
+  "input": ".",
+  "origins": [
+    "03_top_per_team.sql:2"
+  ],
+  "inherited": [
+    "04_report.sql:1"
+  ],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "02_shuffled.sql:3",
+      "cause": "random",
+      "status": "latent"
+    },
+    {
+      "at": "03_top_per_team.sql:6",
+      "cause": "ties",
+      "status": "confirmed"
+    }
+  ],
+  "score": 50
+}

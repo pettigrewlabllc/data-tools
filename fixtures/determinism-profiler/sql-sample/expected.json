@@ -1,0 +1,18 @@
+{
+  "input": ".",
+  "origins": [
+    "02_sampled.sql:2"
+  ],
+  "inherited": [
+    "03_summary.sql:1"
+  ],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "02_sampled.sql:3",
+      "cause": "unseeded_sample",
+      "status": "confirmed"
+    }
+  ],
+  "score": 50
+}

@@ -1,0 +1,16 @@
+{
+  "input": "analysis.ipynb",
+  "origins": [
+    "cell-3"
+  ],
+  "inherited": [],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "cell 2:2",
+      "cause": "unseeded_sample",
+      "status": "confirmed"
+    }
+  ],
+  "score": 66.7
+}

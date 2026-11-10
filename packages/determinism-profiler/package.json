@@ -1,0 +1,27 @@
+{
+  "name": "determinism-profiler",
+  "version": "0.1.0",
+  "description": "Run a notebook, a folder of SQL or a dbt project several times and see which steps give the same answer, and why the others don't.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "determinism-profiler": "dist/cli.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "accuracy": "tsx ../../fixtures/determinism-profiler/accuracy.ts",
+    "dp": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "2.0.0-r.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
