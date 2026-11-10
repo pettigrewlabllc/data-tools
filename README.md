@@ -13,6 +13,8 @@ npm test             # 48 tests against real DuckDB
 npm run accuracy     # scores the labelled join set, writes fixtures/join-receipt/accuracy.json
 ```
 
+To check the AI path against a real model on your own machine (Ollama by default, nothing leaves it): `JR_LIVE_MODEL=<ollama model> npx vitest run packages/core/test/ai-live.test.ts`.
+
 To also run the generated pandas code inside the tests, point `JR_PYTHON` at a Python that has pandas: `JR_PYTHON=/path/to/python npm test`.
 
 ## What's in a receipt
@@ -27,7 +29,7 @@ To also run the generated pandas code inside the tests, point `JR_PYTHON` at a P
 
 - `packages/core` is the engine. It's plain TypeScript, never imports DuckDB, and talks to a three-method `Db` interface. Every number on screen comes from a SQL query it builds.
 - `packages/core-node` runs the core on `@duckdb/node-api` for tests, fixtures and a future CLI.
-- `packages/join-receipt` is the web app: Vite, React and DuckDB-Wasm in a worker.
+- `packages/join-receipt` is the web app: Vite, React and DuckDB-Wasm in a worker. CSV, JSON and Parquet readers are built into the Wasm bundle and extension auto-install is turned off, so the page never downloads DuckDB code from the internet. Loading CSV, Excel, JSON, NDJSON and Parquet files made no request outside localhost.
 - A join is described with a small closed grammar (`trim`, `lower`, `upper`, `lpad`, `crosswalk`, `cast`, `date_trunc`, `join_on`, `aggregate`). Rules, people and models all use the same grammar, and the same SQL builder produces both the receipt queries and the SQL you download, so the numbers you see come from the expressions you take home.
 - Keys are always compared as text. DuckDB will otherwise cast `'01001'` to the number 1001 and "match" codes that pandas won't, which makes the receipt and the exported code disagree. That one came from the design review.
 
@@ -36,6 +38,10 @@ Decision records are in [docs/adr](docs/adr). The design, the plan and the revie
 ## AI drafts (optional, off by default)
 
 If you turn it on, a model can suggest cleanups the rules missed. You bring your own key (Anthropic) or point it at a local model (anything OpenAI-compatible, including Ollama). Before anything is sent you see the exact request, and by default sample values are masked (`01001` goes out as `99999`; public state and country codes stay as they are). The model can only answer in the grammar above. Anything else is rejected and shown as rejected. Every valid suggestion is run and scored on your data before you see it, and if you keep one, `mapping.yml` records the model and a hash of the prompt.
+
+Checked against a real model: qwen3 30B on a local Ollama, in the app and in `ai-live.test.ts`. On 30 unpadded county codes it sent back three fixes. One took the match rate from 0% to 100%, and the other two did nothing (0%). The scoring is what tells them apart, which is the point. The Anthropic path is covered by request-shape tests but hasn't been run against the live API yet.
+
+On localhost, Ollama answers the page as is. From a deployed copy it only answers pages it trusts, so start it with `OLLAMA_ORIGINS=<that page's origin> ollama serve`.
 
 ## Accuracy
 
@@ -52,7 +58,6 @@ Read that number for what it is. The first run scored 94.4%, and the two misses 
 - Joins are pairwise. Planning across many tables comes later.
 - The SQL export is DuckDB SQL (it uses `TRY_CAST` and `read_csv_auto`). Postgres is planned with the dbt output.
 - The sample data is synthetic, shaped like Census county files.
-- JSON files may make DuckDB-Wasm fetch its JSON extension from duckdb.org the first time. That request carries no data, but it's a request. Not verified yet.
 
 ## License
 
