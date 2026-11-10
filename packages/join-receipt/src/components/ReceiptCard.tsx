@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  describePattern, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS,
-  type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type Aggregate, type AggFn, type Db,
+  describePattern, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
+  type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
 } from '@data-tools/core';
 import type { AiState } from './AiPanel';
 
@@ -60,6 +60,7 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
   }
 
   const keyName = (k: KeyRef) => `${profiles.find((p) => p.table === k.table)?.file ?? k.table}.${k.column}`;
+  const also = plan.join.also ?? [];
   const setPlan = (p: Plan, patch?: Partial<Card>) => onPlan(p, patch);
   const statusClass = card.status === 'approved' ? 'is-approved' : card.status === 'rejected' ? 'is-rejected' : '';
 
@@ -68,7 +69,9 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
       <header className="card-head">
         <div>
           <h3 id={titleId}>{lp.file} + {rp.file}</h3>
-          <p className="on">on <code>{keyName(plan.join.left)}</code> = <code>{keyName(plan.join.right)}</code></p>
+          <p className="on">on {[{ left: plan.join.left, right: plan.join.right }, ...also].map((k, i) => (
+            <span key={i}>{i ? ' and ' : ''}<code>{keyName(k.left)}</code> = <code>{keyName(k.right)}</code></span>
+          ))}</p>
         </div>
         <div className="score" title={SCORE_LABEL}>
           <span className="score-n">{cand.score}</span>
@@ -93,8 +96,8 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
             {pair.best.map((b, i) => (
               <label key={i} className="radio">
                 <input type="radio" name={`key-${card.id}`} checked={card.choice === i}
-                  onChange={() => setPlan({ join: { op: 'join_on', left: b.left, right: b.right, how: plan.join.how } }, { choice: i, proposedBy: 'rule' })} />
-                <code>{b.left.column}</code> = <code>{b.right.column}</code> <span className="muted">score {b.score}</span>
+                  onChange={() => setPlan({ join: { op: 'join_on', left: b.left, right: b.right, how: plan.join.how, ...(b.also ? { also: b.also } : {}) } }, { choice: i, proposedBy: 'rule' })} />
+                <code>{[b.left.column, ...(b.also ?? []).map((x) => x.left.column)].join(' × ')}</code> = <code>{[b.right.column, ...(b.also ?? []).map((x) => x.right.column)].join(' × ')}</code> <span className="muted">score {b.score}</span>
               </label>
             ))}
           </fieldset>
@@ -109,6 +112,7 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
           onChange={(k) => setPlan({ ...plan, join: { ...plan.join, left: k } })} />
         <TransformEditor label={keyName(plan.join.right)} keyRef={plan.join.right} profiles={profiles} other={plan.join.left}
           onChange={(k) => setPlan({ ...plan, join: { ...plan.join, right: k } })} />
+        <AlsoEditor plan={plan} lp={lp} rp={rp} onChange={(a) => setPlan({ ...plan, join: { ...plan.join, ...(a.length ? { also: a } : { also: undefined }) }, aggregateRight: null })} />
         {plan.aggregateRight && (
           <AggregateEditor agg={plan.aggregateRight} file={rp.file}
             onChange={(a) => setPlan({ ...plan, aggregateRight: a })} />
@@ -142,11 +146,11 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
   return (
     <div className="paper">
       <dl>
-        <div><dt>Matched</dt><dd>{fmt(r.matchedLeft)} of {fmt(r.leftRows)} {lfile} rows ({pct(r.matchRateAfter)})</dd></div>
+        <div><dt>Matched</dt><dd>{fmt(r.matchedLeft)} of {fmt(r.leftRows)} {lfile} {r.leftRows === 1 ? 'row' : 'rows'} ({pct(r.matchRateAfter)})</dd></div>
         <div>
           <dt>Didn't match</dt>
           <dd>
-            {fmt(r.unmatchedLeft)} {lfile} rows
+            {fmt(r.unmatchedLeft)} {lfile} {r.unmatchedLeft === 1 ? 'row' : 'rows'}
             {r.patternsLeft.map((p, i) => <p key={i} className="pattern">{describePattern(p)}</p>)}
             {r.unmatchedLeft > 0 && unmatched?.left.length ? <p className="muted small">For example: {unmatched.left.slice(0, 4).map((v, i) => <span key={v}>{i ? ", " : ""}<code>{v}</code></span>)}</p> : null}
           </dd>
@@ -154,7 +158,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
         <div>
           <dt>Left over</dt>
           <dd>
-            {fmt(r.unmatchedRight)} of {fmt(r.rightRows)} {rfile} rows found nothing to join to
+            {fmt(r.unmatchedRight)} of {fmt(r.rightRows)} {rfile} {r.rightRows === 1 ? 'row' : 'rows'} found nothing to join to
             {r.patternsRight.map((p, i) => <p key={i} className="pattern">{describePattern(p)}</p>)}
           </dd>
         </div>
@@ -223,6 +227,50 @@ function TransformEditor({ label, keyRef, other, profiles, onChange }: { label: 
         {options.map((o, i) => <option key={i} value={i}>{o.label}</option>)}
       </select>
     </div>
+  );
+}
+
+/** Extra key columns, for a key like county × year. Up to two, no cleanup on them. */
+function AlsoEditor({ plan, lp, rp, onChange }: { plan: Plan; lp: TableProfile; rp: TableProfile; onChange: (a: KeyPair[]) => void }) {
+  const also = plan.join.also ?? [];
+  const usedL = new Set([plan.join.left.column, ...also.map((p) => p.left.column)]);
+  const usedR = new Set([plan.join.right.column, ...also.map((p) => p.right.column)]);
+  const freeL = lp.columns.filter((c) => !usedL.has(c.name)), freeR = rp.columns.filter((c) => !usedR.has(c.name));
+  const [l, setL] = useState(''), [r, setR] = useState('');
+  const add = () => {
+    if (!l || !r) return;
+    onChange([...also, { left: { table: lp.table, column: l, transforms: [] }, right: { table: rp.table, column: r, transforms: [] } }]);
+    setL(''); setR('');
+  };
+  return (
+    <fieldset>
+      <legend>Also match on</legend>
+      {also.length > 0 && (
+        <ul className="chips">
+          {also.map((p, i) => (
+            <li key={i} className="chip">
+              <code>{p.left.column}</code> = <code>{p.right.column}</code>
+              <button className="x" aria-label={`Stop matching on ${p.left.column}`} onClick={() => onChange(also.filter((_, j) => j !== i))}>×</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {also.length < MAX_EXTRA_KEYS && freeL.length > 0 && freeR.length > 0 && (
+        <div className="inline">
+          <select aria-label={`Column in ${lp.file}`} value={l} onChange={(e) => setL(e.target.value)}>
+            <option value="">{lp.file} column…</option>
+            {freeL.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+          =
+          <select aria-label={`Column in ${rp.file}`} value={r} onChange={(e) => setR(e.target.value)}>
+            <option value="">{rp.file} column…</option>
+            {freeR.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+          <button disabled={!l || !r} onClick={add}>Add</button>
+        </div>
+      )}
+      <p className="muted small">For a key like county and year. Every column has to match.</p>
+    </fieldset>
   );
 }
 

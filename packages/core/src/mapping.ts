@@ -1,5 +1,5 @@
 import { parse, stringify } from 'yaml';
-import type { Aggregate, JoinOn, KeyRef } from './grammar';
+import type { Aggregate, JoinOn, KeyPair, KeyRef } from './grammar';
 import type { Plan } from './joinsql';
 
 export const TOOL = 'join-receipt';
@@ -10,6 +10,8 @@ export interface MappingJoin {
   left: KeyRef;
   right: KeyRef;
   how: JoinOn['how'];
+  /** Extra key columns; omitted when the key is one column. */
+  also?: KeyPair[];
   aggregate_left: Aggregate | null;
   aggregate_right: Aggregate | null;
   status: 'approved' | 'rejected' | 'proposed';
@@ -17,11 +19,24 @@ export interface MappingJoin {
   llm: { model: string; prompt_sha256: string } | null;
   receipt: { matched: number; unmatched_left: number; unmatched_right: number; joined_rows: number; fanout: number; max_per_key_right: number };
 }
-export interface MappingTable { name: string; file: string; grain: string[] | null }
+export interface MappingTable {
+  name: string; file: string; grain: string[] | null;
+  /** Excel only. The scripts read `read_from`, the CSV copy of the table Join Receipt found in `sheet`. */
+  sheet?: { name: string; header_row: number; last_row: number }; read_from?: string;
+}
 export interface Mapping { tool: string; version: string; tables: MappingTable[]; joins: MappingJoin[] }
 
+/** The mapping's table entry for a profile. */
+export function mappingTable(p: { table: string; file: string; grain: string[] | null; sheet?: { sheet: string; headerRow: number; lastRow: number }; readFrom?: string }): MappingTable {
+  return {
+    name: p.table, file: p.file, grain: p.grain,
+    ...(p.sheet ? { sheet: { name: p.sheet.sheet, header_row: p.sheet.headerRow, last_row: p.sheet.lastRow } } : {}),
+    ...(p.readFrom ? { read_from: p.readFrom } : {}),
+  };
+}
+
 export function planOf(j: MappingJoin): Plan {
-  return { join: { op: 'join_on', left: j.left, right: j.right, how: j.how }, aggregateLeft: j.aggregate_left, aggregateRight: j.aggregate_right };
+  return { join: { op: 'join_on', left: j.left, right: j.right, how: j.how, ...(j.also?.length ? { also: j.also } : {}) }, aggregateLeft: j.aggregate_left, aggregateRight: j.aggregate_right };
 }
 
 // Fixed key order, so the same decisions always produce the same bytes.
@@ -33,12 +48,17 @@ export function canonical(m: Mapping): Mapping {
   return {
     tool: m.tool,
     version: m.version,
-    tables: m.tables.map((t) => ({ name: t.name, file: t.file, grain: t.grain ? [...t.grain] : null })),
+    tables: m.tables.map((t) => ({
+      name: t.name, file: t.file, grain: t.grain ? [...t.grain] : null,
+      ...(t.sheet ? { sheet: { name: t.sheet.name, header_row: t.sheet.header_row, last_row: t.sheet.last_row } } : {}),
+      ...(t.read_from ? { read_from: t.read_from } : {}),
+    })),
     joins: m.joins.map((j) => ({
       id: j.id,
       left: keyRef(j.left),
       right: keyRef(j.right),
       how: j.how,
+      ...(j.also?.length ? { also: j.also.map((x) => ({ left: keyRef(x.left), right: keyRef(x.right) })) } : {}),
       aggregate_left: agg(j.aggregate_left),
       aggregate_right: agg(j.aggregate_right),
       status: j.status,

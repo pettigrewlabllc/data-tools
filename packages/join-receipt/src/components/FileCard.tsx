@@ -9,6 +9,12 @@ export function FileCard({ profile, grain }: { profile: TableProfile; grain: str
       <header>
         <h3 id={`f-${profile.table}`}>{profile.file}</h3>
         <p className="meta">{fmt(profile.rows)} rows · {grain}</p>
+        {profile.sheet && (
+          <p className="meta">
+            From sheet "{profile.sheet.sheet}", header on row {profile.sheet.headerRow}, data through row {profile.sheet.lastRow}.
+            {profile.sheet.sheetCount > 1 && ` The workbook has ${profile.sheet.sheetCount} sheets, and this is the first one with a table in it.`}
+          </p>
+        )}
       </header>
       <div className="table-wrap">
         <table>

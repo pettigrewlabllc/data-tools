@@ -42,6 +42,14 @@ export function keyExpr(ref: KeyRef, alias: string): string {
   return V(x);
 }
 
+/** A side's whole key as one text value. Several columns are joined with the unit separator, and a
+ *  missing part makes the whole key missing, so a row with half a key never matches. */
+export function compositeKeyExpr(refs: KeyRef[], alias: string): string {
+  if (refs.length === 1) return keyExpr(refs[0], alias);
+  const parts = refs.map((r) => keyExpr(r, alias));
+  return `CASE WHEN ${parts.map((p) => `${p} IS NULL`).join(' OR ')} THEN NULL ELSE concat_ws(chr(31), ${parts.join(', ')}) END`;
+}
+
 /** CTE definitions for every crosswalk the keys use, in a fixed order. */
 export function crosswalkCtes(refs: KeyRef[]): string[] {
   const used = new Set<CrosswalkTable>();

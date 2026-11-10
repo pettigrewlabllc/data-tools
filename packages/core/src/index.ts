@@ -4,6 +4,7 @@ export * from './sql/quote';
 export * from './sql/crosswalks';
 export * from './sql/emit';
 export * from './load';
+export * from './excel';
 export * from './formats';
 export * from './profile';
 export * from './score';

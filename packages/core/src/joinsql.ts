@@ -1,7 +1,7 @@
-import type { Aggregate, JoinOn, KeyRef } from './grammar';
+import { sideRefs, type Aggregate, type JoinOn, type KeyRef } from './grammar';
 import type { TableProfile } from './profile';
 import { ident } from './sql/quote';
-import { crosswalkCtes, keyExpr } from './sql/emit';
+import { crosswalkCtes, compositeKeyExpr } from './sql/emit';
 
 export interface Plan { join: JoinOn; aggregateLeft?: Aggregate | null; aggregateRight?: Aggregate | null }
 
@@ -35,13 +35,14 @@ export interface JoinParts {
 /** The one place the join's SQL is built. Receipts and exported scripts both use it. */
 export function joinParts(plan: Plan, profiles: TableProfile[], source: SourceFn = tableSource): JoinParts {
   const { left, right, how } = plan.join;
+  const lrefs = sideRefs(plan.join, 'left'), rrefs = sideRefs(plan.join, 'right');
   const lsrc = source(left.table), rsrc = source(right.table);
   const ctes = [
-    ...crosswalkCtes([left, right]),
+    ...crosswalkCtes([...lrefs, ...rrefs]),
     `L AS (${plan.aggregateLeft ? aggSql(plan.aggregateLeft, lsrc) : lsrc})`,
     `R AS (${plan.aggregateRight ? aggSql(plan.aggregateRight, rsrc) : rsrc})`,
   ];
-  const lk = keyExpr(left, 'l'), rk = keyExpr(right, 'r');
+  const lk = compositeKeyExpr(lrefs, 'l'), rk = compositeKeyExpr(rrefs, 'r');
   const leftCols = sideColumns(left.table, plan.aggregateLeft, profiles);
   const taken = new Set(leftCols);
   const rightCols = sideColumns(right.table, plan.aggregateRight, profiles).map((name) => {
