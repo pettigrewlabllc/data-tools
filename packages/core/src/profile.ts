@@ -16,6 +16,7 @@ export interface TableProfile {
   /** The file was Windows-1252, not UTF-8. */
   encoding?: 'windows-1252';
   delimiter?: string;
+  warning?: string;
 }
 
 export const SAMPLE_SIZE = 200;

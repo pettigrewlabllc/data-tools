@@ -16,6 +16,8 @@ npm run accuracy:real  # the same on real Census and BLS files, writes accuracy-
 
 To check the AI path against a real model on your own machine (Ollama by default, nothing leaves it): `JR_LIVE_MODEL=<ollama model> npx vitest run packages/core/test/ai-live.test.ts`.
 
+`npm run e2e` runs the browser tests against the production build (port 3077): the sample flow, an edit un-approving a join, Excel with a two-column key, bad files, keyboard use, and an axe accessibility scan in light and dark, at 1280px and 390px. They also fail if the page makes any request off its own origin.
+
 To also run the generated pandas code inside the tests, point `JR_PYTHON` at a Python that has pandas: `JR_PYTHON=/path/to/python npm test`.
 
 ## What's in a receipt
@@ -65,6 +67,10 @@ What the receipts say on these files is the better test, and they hold up:
 - The population file also mixes 51 state total rows in with the counties. Those show up as left over, but nothing explains them yet, because the flag that marks them (`SUMLEV`) has two values and the PRD keeps columns under three out of the explanations.
 
 Six pairs is a small set. It's real, though, and it's the number to quote.
+
+## How big a file
+
+Measured in headless Chrome on a MacBook: two CSVs of 500,000 and 400,000 rows (30 MB together) take 2.9 seconds from drop to receipt, and an edit recalculates in 0.6 seconds. At 2.5 million and 2 million rows (100 MB) it's 9.5 seconds and 2.4 seconds. Everything stays in the browser tab, so the ceiling is the tab's memory, not a server.
 
 ## Limits right now
 
