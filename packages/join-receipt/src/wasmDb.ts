@@ -21,6 +21,9 @@ export async function createWasmDb(): Promise<WasmDb> {
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
   await db.open({ query: { castBigIntToDouble: true, castDecimalToDouble: true } });
   const conn = await db.connect();
+  // CSV, JSON and Parquet are built into this bundle. Never fetch an extension from the internet: if a file
+  // ever needed one, loading it should fail here rather than quietly reach out to extensions.duckdb.org.
+  await conn.query('SET autoinstall_known_extensions = false');
   let serial = 0;
   return {
     async query(sql) {

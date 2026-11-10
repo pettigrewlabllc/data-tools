@@ -31,7 +31,7 @@ export function AiPanel({ ai, setAi }: { ai: AiState; setAi: (a: AiState) => voi
             <input type="password" value={ai.apiKey} onChange={(e) => set({ apiKey: e.target.value })} autoComplete="off" spellCheck={false} />
           </label>
           <p className="muted">Your key stays in this tab's memory. It's never saved, and it's gone when you close the tab.</p>
-          {ai.kind === 'openai-compatible' && (
+          {ai.kind === 'openai-compatible' && !/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname) && (
             <p className="muted">Ollama only answers pages it trusts. Start it with <code>OLLAMA_ORIGINS={window.location.origin} ollama serve</code>.</p>
           )}
           <label className="check">
