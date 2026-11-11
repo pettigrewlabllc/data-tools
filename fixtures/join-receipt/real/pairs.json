@@ -4,43 +4,220 @@
     "census_counties_2020.txt": "U.S. Census Bureau, 2020 FIPS county codes, https://www2.census.gov/geo/docs/reference/codes2020/national_county2020.txt",
     "census_states_2020.txt": "U.S. Census Bureau, 2020 FIPS state codes, https://www2.census.gov/geo/docs/reference/codes2020/national_state2020.txt",
     "census_popest_county_2024.csv": "U.S. Census Bureau, county population totals 2020-2024 (Vintage 2024), https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv",
-    "bls_laus_county_2024.xlsx": "U.S. Bureau of Labor Statistics, LAUS county annual averages 2024, https://www.bls.gov/lau/laucnty24.xlsx"
+    "bls_laus_county_2024.xlsx": "U.S. Bureau of Labor Statistics, LAUS county annual averages 2024, https://www.bls.gov/lau/laucnty24.xlsx",
+    "census_gazetteer_counties_2024.txt": "U.S. Census Bureau, 2024 Gazetteer, counties, https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_counties_national.zip (unzipped)",
+    "census_gazetteer_cbsa_2024.txt": "U.S. Census Bureau, 2024 Gazetteer, core based statistical areas, https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_cbsa_national.zip (unzipped)",
+    "omb_cbsa_delineation_2023.xlsx": "OMB metropolitan and micropolitan delineation, List 1, July 2023, via Census, https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2023/delineation-files/list1_2023.xlsx",
+    "census_places_2020.txt": "U.S. Census Bureau, 2020 FIPS place codes, https://www2.census.gov/geo/docs/reference/codes2020/national_place2020.txt",
+    "census_popest_state_2024.csv": "U.S. Census Bureau, state population totals 2020-2024 (Vintage 2024), https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/state/totals/NST-EST2024-ALLDATA.csv",
+    "census_zcta_county_2020.txt": "U.S. Census Bureau, 2020 ZCTA to county relationship file, https://www2.census.gov/geo/docs/maps-data/data/rel2020/zcta520/tab20_zcta520_county20_natl.txt"
   },
-  "downloaded": "2026-11-09",
+  "downloaded": "2026-11-09 (first six pairs' files); 2026-11-10 (the rest)",
   "pairs": [
     {
-      "id": "r1-codes-vs-popest", "family": "real-two-column",
-      "left": "census_counties_2020.txt", "right": "census_popest_county_2024.csv",
-      "accept": ["COUNTYFP × STATEFP ↔ COUNTY × STATE"],
+      "id": "r1-codes-vs-popest",
+      "family": "real-two-column",
+      "left": "census_counties_2020.txt",
+      "right": "census_popest_county_2024.csv",
+      "accept": [
+        "COUNTYFP × STATEFP ↔ COUNTY × STATE"
+      ],
       "note": "County code 001 exists in most states, so the county code alone repeats. The popest file also has a state total row per state (COUNTY = 000), and Connecticut's 2024 rows use planning regions that the 2020 code list doesn't have."
     },
     {
-      "id": "r2-laus-vs-popest", "family": "real-two-column",
-      "left": "bls_laus_county_2024.xlsx", "right": "census_popest_county_2024.csv",
-      "accept": ["County FIPS Code × State FIPS Code ↔ COUNTY × STATE"],
+      "id": "r2-laus-vs-popest",
+      "family": "real-two-column",
+      "left": "bls_laus_county_2024.xlsx",
+      "right": "census_popest_county_2024.csv",
+      "accept": [
+        "County FIPS Code × State FIPS Code ↔ COUNTY × STATE"
+      ],
       "note": "Excel with a title row vs Latin-1 CSV. LAUS also has Puerto Rico, which popest doesn't."
     },
     {
-      "id": "r3-laus-vs-codes", "family": "real-two-column",
-      "left": "bls_laus_county_2024.xlsx", "right": "census_counties_2020.txt",
-      "accept": ["County FIPS Code × State FIPS Code ↔ COUNTYFP × STATEFP"],
+      "id": "r3-laus-vs-codes",
+      "family": "real-two-column",
+      "left": "bls_laus_county_2024.xlsx",
+      "right": "census_counties_2020.txt",
+      "accept": [
+        "County FIPS Code × State FIPS Code ↔ COUNTYFP × STATEFP"
+      ],
       "note": "Excel vs pipe-delimited text."
     },
     {
-      "id": "r4-states-vs-popest", "family": "real-one-column",
-      "left": "census_states_2020.txt", "right": "census_popest_county_2024.csv",
-      "accept": ["STATEFP ↔ STATE", "STATE_NAME ↔ STNAME"],
+      "id": "r4-states-vs-popest",
+      "family": "real-one-column",
+      "left": "census_states_2020.txt",
+      "right": "census_popest_county_2024.csv",
+      "accept": [
+        "STATEFP ↔ STATE",
+        "STATE_NAME ↔ STNAME"
+      ],
       "note": "One row per state on the left, one per county (plus state totals) on the right, so the join fans out."
     },
     {
-      "id": "r5-states-vs-laus", "family": "real-one-column",
-      "left": "census_states_2020.txt", "right": "bls_laus_county_2024.xlsx",
-      "accept": ["STATEFP ↔ State FIPS Code"]
+      "id": "r5-states-vs-laus",
+      "family": "real-one-column",
+      "left": "census_states_2020.txt",
+      "right": "bls_laus_county_2024.xlsx",
+      "accept": [
+        "STATEFP ↔ State FIPS Code"
+      ]
     },
     {
-      "id": "r6-states-vs-codes", "family": "real-one-column",
-      "left": "census_states_2020.txt", "right": "census_counties_2020.txt",
-      "accept": ["STATEFP ↔ STATEFP", "STATE ↔ STATE"]
+      "id": "r6-states-vs-codes",
+      "family": "real-one-column",
+      "left": "census_states_2020.txt",
+      "right": "census_counties_2020.txt",
+      "accept": [
+        "STATEFP ↔ STATEFP",
+        "STATE ↔ STATE"
+      ]
+    },
+    {
+      "id": "r7-gaz-counties-vs-zcta",
+      "family": "real-one-column",
+      "left": "census_gazetteer_counties_2024.txt",
+      "right": "census_zcta_county_2020.txt",
+      "accept": [
+        "GEOID ↔ GEOID_COUNTY_20"
+      ],
+      "note": "Five-digit county GEOID on both sides. The relationship file has many ZCTAs per county, so the join fans out, and its first rows have a blank ZCTA."
+    },
+    {
+      "id": "r8-cbsa-gaz-vs-delineation",
+      "family": "real-one-column",
+      "left": "census_gazetteer_cbsa_2024.txt",
+      "right": "omb_cbsa_delineation_2023.xlsx",
+      "accept": [
+        "GEOID ↔ CBSA Code"
+      ],
+      "note": "One row per CBSA on the left; one row per county in the delineation, which has two title rows above the header."
+    },
+    {
+      "id": "r9-delineation-vs-codes",
+      "family": "real-two-column",
+      "left": "omb_cbsa_delineation_2023.xlsx",
+      "right": "census_counties_2020.txt",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ COUNTYFP × STATEFP"
+      ],
+      "note": "2023 delineation uses Connecticut planning regions; the 2020 code list has the old counties."
+    },
+    {
+      "id": "r10-delineation-vs-popest",
+      "family": "real-two-column",
+      "left": "omb_cbsa_delineation_2023.xlsx",
+      "right": "census_popest_county_2024.csv",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ COUNTY × STATE"
+      ],
+      "note": "Both use Connecticut planning regions. The delineation leaves out non-metro counties."
+    },
+    {
+      "id": "r11-delineation-vs-laus",
+      "family": "real-two-column",
+      "left": "omb_cbsa_delineation_2023.xlsx",
+      "right": "bls_laus_county_2024.xlsx",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ County FIPS Code × State FIPS Code"
+      ],
+      "note": "Two Excel files, both with title rows."
+    },
+    {
+      "id": "r12-popest-state-vs-states",
+      "family": "real-one-column",
+      "left": "census_popest_state_2024.csv",
+      "right": "census_states_2020.txt",
+      "accept": [
+        "STATE ↔ STATEFP",
+        "NAME ↔ STATE_NAME"
+      ],
+      "note": "The popest state file also has a U.S. row and four region rows (STATE = 00)."
+    },
+    {
+      "id": "r13-popest-state-vs-popest-county",
+      "family": "real-one-column",
+      "left": "census_popest_state_2024.csv",
+      "right": "census_popest_county_2024.csv",
+      "accept": [
+        "STATE ↔ STATE",
+        "NAME ↔ STNAME"
+      ],
+      "note": "State totals against counties, so it fans out."
+    },
+    {
+      "id": "r14-places-vs-states",
+      "family": "real-one-column",
+      "left": "census_places_2020.txt",
+      "right": "census_states_2020.txt",
+      "accept": [
+        "STATEFP ↔ STATEFP",
+        "STATE ↔ STATE"
+      ],
+      "note": "Places repeat their state many times; the state file is the lookup."
+    },
+    {
+      "id": "r15-places-vs-popest-state",
+      "family": "real-one-column",
+      "left": "census_places_2020.txt",
+      "right": "census_popest_state_2024.csv",
+      "accept": [
+        "STATEFP ↔ STATE"
+      ],
+      "note": "Pipe-delimited text against CSV."
+    },
+    {
+      "id": "r16-delineation-vs-states",
+      "family": "real-one-column",
+      "left": "omb_cbsa_delineation_2023.xlsx",
+      "right": "census_states_2020.txt",
+      "accept": [
+        "FIPS State Code ↔ STATEFP",
+        "State Name ↔ STATE_NAME"
+      ]
+    },
+    {
+      "id": "r17-gaz-counties-vs-states",
+      "family": "real-one-column",
+      "left": "census_gazetteer_counties_2024.txt",
+      "right": "census_states_2020.txt",
+      "accept": [
+        "USPS ↔ STATE"
+      ],
+      "note": "Postal abbreviation on both sides, under different names."
+    },
+    {
+      "id": "r18-popest-state-vs-laus",
+      "family": "real-one-column",
+      "left": "census_popest_state_2024.csv",
+      "right": "bls_laus_county_2024.xlsx",
+      "accept": [
+        "STATE ↔ State FIPS Code"
+      ]
+    },
+    {
+      "id": "r19-delineation-vs-popest-state",
+      "family": "real-one-column",
+      "left": "omb_cbsa_delineation_2023.xlsx",
+      "right": "census_popest_state_2024.csv",
+      "accept": [
+        "FIPS State Code ↔ STATE",
+        "State Name ↔ NAME"
+      ]
+    },
+    {
+      "id": "r20-gaz-counties-vs-popest-state",
+      "family": "real-one-column",
+      "left": "census_gazetteer_counties_2024.txt",
+      "right": "census_popest_state_2024.csv",
+      "accept": [
+        "USPS ↔ NAME",
+        "USPS ↔ STATE"
+      ],
+      "note": "Postal code on the left, state code and name on the right, so the key needs the built-in state lookup (abbreviation to name or to FIPS). The left fans out to every county.",
+      "label_corrected": "2026-11-10, after the first run: the original label was \"none\", which forgot that the state lookup exists. The first run scored this pair right for the wrong reason (it said no key, and a lookup key matched 3,222 of 3,222)."
     }
-  ]
+  ],
+  "labelled_before_running": "Pairs r7 to r20 were labelled on 2026-11-10 before the engine was run on them."
 }

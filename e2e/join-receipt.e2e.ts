@@ -11,7 +11,7 @@ function noExternalRequests(page: Page) {
   return () => expect(external, 'requests that left the page').toEqual([]);
 }
 const settled = (page: Page, cards: number) =>
-  page.waitForFunction((n) => document.querySelectorAll('.card .paper').length >= n && !document.querySelector('[aria-busy="true"]'), cards, { timeout: 60_000 });
+  page.waitForFunction((n) => document.querySelectorAll('.card:not(.example) .paper').length >= n && !document.querySelector('[aria-busy="true"]'), cards, { timeout: 60_000 });
 const card = (page: Page, text: string) => page.locator('.card', { has: page.locator('.on', { hasText: text }) });
 
 test('sample data: receipts, the Alaska pattern, fan-out fixed by a roll-up, and the export matches', async ({ page }) => {
@@ -34,7 +34,7 @@ test('sample data: receipts, the Alaska pattern, fan-out fixed by a roll-up, and
 
   await ak.getByRole('button', { name: 'Approve' }).click();
   await expect(ak).toContainText('Approved. It goes in your downloads.');
-  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Joined data:/ }).click()]);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Download the joined data:/ }).click()]);
   const rows = readFileSync(await dl.path(), 'utf8').trim().split('\n');
   expect(rows.length - 1).toBe(216);
   await expect(page.locator('.code pre')).toContainText('assert len(');
@@ -66,7 +66,7 @@ test('Excel plus CSV: two-column key proposed, CSV copy offered with the scripts
   await expect(c.locator('.on')).toContainText('and');
   await expect(c.locator('.paper')).toContainText('5 of 6 counties.csv rows');
   await c.getByRole('button', { name: 'Approve' }).click();
-  await expect(page.getByRole('button', { name: 'laus_style.xlsx.csv' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download laus_style.xlsx.csv' })).toBeVisible();
   check();
 });
 
@@ -87,9 +87,10 @@ test('bad files fail with a reason and the rest still load', async ({ page }) =>
   await settled(page, 1);
 });
 
-test('keyboard only: the sample loads from Enter', async ({ page }) => {
+test('keyboard only: the sample loads from Enter', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.keyboard.press('Tab');
+  // Safari on a Mac skips buttons on Tab unless the user turns that on; Option+Tab is its keyboard path.
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
   await expect(page.getByRole('button', { name: 'Try the sample data' })).toBeFocused();
   await page.keyboard.press('Enter');
   await settled(page, 3);
@@ -104,7 +105,38 @@ for (const scheme of ['light', 'dark'] as const) {
     const results = await new AxeBuilder({ page }).analyze();
     const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
     expect(bad.map((v) => `${v.id}: ${v.help} (${v.nodes.length}) ${v.nodes[0]?.target}`)).toEqual([]);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no sideways scroll').toBe(true);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth ? [] :
+      Array.from(document.querySelectorAll('body *')).filter((e) => (e as HTMLElement).scrollWidth > innerWidth || e.getBoundingClientRect().right > innerWidth + 0.5)
+        .slice(-5).map((e) => `${e.tagName.toLowerCase()}.${e.className} sw=${(e as HTMLElement).scrollWidth} right=${Math.round(e.getBoundingClientRect().right)}`));
+    expect(wide, 'no sideways scroll (these are the widest elements)').toEqual([]);
     await info.attach(`${scheme}`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
   });
 }
+
+test('the empty page shows an example receipt, and it gives way to the real ones', async ({ page }) => {
+  await page.goto('/');
+  const example = page.locator('.card.example');
+  await expect(example).toContainText('208 of 216 counties');
+  await expect(page.getByRole('link', { name: 'The code is on GitHub' })).toHaveAttribute('href', 'https://github.com/pettigrewlabllc/data-tools');
+  await page.getByRole('button', { name: 'Try the sample data' }).click();
+  await settled(page, 3);
+  await expect(example).toHaveCount(0);
+});
+
+test('you can join on columns the search did not propose', async ({ page }) => {
+  await page.goto('/');
+  const left = 'id,team\n1,Hawks\n2,Bulls\n3,Suns\n4,Heat\n';
+  const right = 'code,nickname,wins\n10,Hawks,40\n20,Bulls,38\n30,Suns,51\n';
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'teams.csv', mimeType: 'text/csv', buffer: Buffer.from(left) },
+    { name: 'records.csv', mimeType: 'text/csv', buffer: Buffer.from(right) },
+  ]);
+  const c = page.locator('.card.receipt').first();
+  await expect(c).toBeVisible({ timeout: 60_000 });
+  if (await c.locator('details.edit').count()) await c.locator('details.edit summary').click();
+  await c.getByLabel('Key column in teams.csv').selectOption('team');
+  await c.getByLabel('Key column in records.csv').selectOption('nickname');
+  await c.getByRole('button', { name: 'Use these' }).click();
+  await expect(c.locator('.paper')).toContainText('3 of 4 teams.csv rows');
+  await expect(c.locator('.paper')).toContainText('For example: Heat');
+});

@@ -8,7 +8,15 @@ export interface ColumnProfile {
   format: FormatClass; samples: string[]; minLen: number; maxLen: number;
   /** Unique integers running 0..n-1 or 1..n: a row number, not a real key. */
   rowNumber: boolean;
+  /** Unique except for one value that a few rows share, like a 00 on the U.S. and region total rows. */
+  nearUnique?: { value: string; rows: number };
 }
+
+/**
+ * At most this share of rows can share the one repeated value for a column to count as nearly unique.
+ * The Census state population file has 52 states plus 14 total rows (U.S., 4 regions, 9 divisions) coded 00: 21%.
+ */
+export const NEAR_UNIQUE_MAX_SHARE = 0.25;
 export interface TableProfile {
   table: string; file: string; rows: number; columns: ColumnProfile[]; grain: string[] | null;
   /** Excel only: which sheet and rows the table came from, and the CSV copy exports read. */
@@ -58,6 +66,11 @@ export async function profileTable(db: Db, table: string, file: string): Promise
     });
   }
   for (const c of columns) {
+    const extra = rows - c.nulls - c.distinct;
+    if (!c.unique && c.nulls === 0 && rows >= 10 && extra >= 1 && extra + 1 <= Math.max(2, NEAR_UNIQUE_MAX_SHARE * rows)) {
+      const [top] = await db.query(`SELECT CAST(${ident(c.name)} AS VARCHAR) AS v, count(*) AS k FROM ${t} GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 1`);
+      if (top && Number(top.k) === extra + 1) c.nearUnique = { value: String(top.v), rows: Number(top.k) };
+    }
     if (c.unique && /INT/.test(c.type)) {
       const [mm] = await db.query(`SELECT min(${ident(c.name)}) AS lo, max(${ident(c.name)}) AS hi FROM ${t}`);
       const lo = Number(mm.lo), hi = Number(mm.hi);

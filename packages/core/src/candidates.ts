@@ -88,9 +88,28 @@ export async function scorePair(db: Db, lp: TableProfile, rp: TableProfile, lc: 
     nameSim: nameSimilarity(lc.name, rc.name, lp.table, rp.table),
     minDistinct: Math.min(lc.distinct, rc.distinct),
     bothRowNumbers: lc.rowNumber && rc.rowNumber,
+    // Only when the key is used as is: a transform can merge values, so the profile's count no longer applies.
+    leftNearUnique: chain.left.length ? null : lc.nearUnique ?? null,
+    rightNearUnique: chain.right.length ? null : rc.nearUnique ?? null,
   };
   const { score, reason } = scoreCandidate(features, left, right);
   return { left, right, features, score, reason };
+}
+
+/**
+ * Score a key the person picked by hand, the same way the search scores its own: try each cleanup chain and keep
+ * the best. Falls back to the raw columns when nothing overlaps, so the receipt can say so.
+ */
+export async function scoreColumns(db: Db, lp: TableProfile, rp: TableProfile, leftColumn: string, rightColumn: string): Promise<JoinCandidate> {
+  const lc = lp.columns.find((c) => c.name === leftColumn), rc = rp.columns.find((c) => c.name === rightColumn);
+  if (!lc || !rc) throw new Error(`no column ${!lc ? `${lp.table}.${leftColumn}` : `${rp.table}.${rightColumn}`}`);
+  let best: JoinCandidate | null = null;
+  for (const chain of normalisationChains(lc, rc)) {
+    const cand = await scorePair(db, lp, rp, lc, rc, chain);
+    if (cand.features.overlap === 0) continue;
+    if (!best || cand.score > best.score) best = cand;
+  }
+  return best ?? scorePair(db, lp, rp, lc, rc, { left: [], right: [] });
 }
 
 export const RELIABLE_SCORE = 50;

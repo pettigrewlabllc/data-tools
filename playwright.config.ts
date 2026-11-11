@@ -12,6 +12,10 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
     { name: 'phone', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
+    // Safari and Firefox load a different DuckDB-Wasm build than Chrome, so they get their own runs.
+    { name: 'safari', use: { ...devices['Desktop Safari'], viewport: { width: 1280, height: 900 } } },
+    { name: 'iphone', use: { ...devices['iPhone 15'], viewport: { width: 390, height: 844 } } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 900 } } },
   ],
   webServer: {
     command: 'npm run build -w join-receipt && npm exec -w join-receipt -- vite preview --port 3077 --strictPort',

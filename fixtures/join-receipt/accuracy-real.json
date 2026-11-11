@@ -1,7 +1,7 @@
 {
   "synthetic": false,
-  "pairs": 6,
-  "correct": 6,
+  "pairs": 20,
+  "correct": 20,
   "top1": 1,
   "results": [
     {
@@ -149,6 +149,350 @@
         "cleanup": null,
         "patternsLeft": [],
         "patternsRight": []
+      }
+    },
+    {
+      "id": "r7-gaz-counties-vs-zcta",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "GEOID ↔ GEOID_COUNTY_20",
+      "accept": [
+        "GEOID ↔ GEOID_COUNTY_20"
+      ],
+      "score": 90,
+      "reason": "100% of census_gazetteer_counties_2024 keys found in census_zcta_county_2020; census_gazetteer_counties_2024.GEOID is unique.",
+      "receipt": {
+        "matched": "3213 of 3222",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9972067039106145,
+        "leftOver": "336 of 47863",
+        "fanout": 14.79,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [
+          "All 9 unmatched rows have USPS = CT (CT is <1% of the file)."
+        ],
+        "patternsRight": [
+          "323 of 336 unmatched rows have CLASSFP_COUNTY_20 = H4 (H4 is 2% of the file).",
+          "315 of 336 unmatched rows have FUNCSTAT_COUNTY_20 = N (N is 2% of the file)."
+        ]
+      }
+    },
+    {
+      "id": "r8-cbsa-gaz-vs-delineation",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "GEOID ↔ CBSA Code",
+      "accept": [
+        "GEOID ↔ CBSA Code"
+      ],
+      "score": 85,
+      "reason": "100% of census_gazetteer_cbsa_2024 keys found in omb_cbsa_delineation_2023; census_gazetteer_cbsa_2024.GEOID is unique.",
+      "receipt": {
+        "matched": "935 of 935",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "0 of 1915",
+        "fanout": 2.05,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r9-delineation-vs-codes",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "FIPS County Code × FIPS State Code ↔ COUNTYFP × STATEFP",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ COUNTYFP × STATEFP"
+      ],
+      "score": 85,
+      "reason": "100% of omb_cbsa_delineation_2023 keys found in census_counties_2020; each file has one row per key (FIPS State Code × FIPS County Code = STATEFP × COUNTYFP).",
+      "receipt": {
+        "matched": "1906 of 1915",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9953002610966057,
+        "leftOver": "1329 of 3235",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "All 9 unmatched rows have FIPS State Code = 09 (09 is <1% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r10-delineation-vs-popest",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "FIPS County Code × FIPS State Code ↔ COUNTY × STATE",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ COUNTY × STATE"
+      ],
+      "score": 88,
+      "reason": "96% of omb_cbsa_delineation_2023 keys found in census_popest_county_2024; each file has one row per key (FIPS County Code × FIPS State Code = COUNTY × STATE).",
+      "receipt": {
+        "matched": "1844 of 1915",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9629242819843342,
+        "leftOver": "1351 of 3195",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "All 71 unmatched rows have FIPS State Code = 72 (72 is 4% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r11-delineation-vs-laus",
+      "family": "real-two-column",
+      "correct": true,
+      "got": "FIPS County Code × FIPS State Code ↔ County FIPS Code × State FIPS Code",
+      "accept": [
+        "FIPS County Code × FIPS State Code ↔ County FIPS Code × State FIPS Code"
+      ],
+      "score": 100,
+      "reason": "100% of omb_cbsa_delineation_2023 keys found in bls_laus_county_2024; each file has one row per key (FIPS County Code × FIPS State Code = County FIPS Code × State FIPS Code); names match (FIPS County Code ↔ County FIPS Code).",
+      "receipt": {
+        "matched": "1914 of 1915",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9994778067885117,
+        "leftOver": "1307 of 3221",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r12-popest-state-vs-states",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "NAME ↔ STATE_NAME",
+      "accept": [
+        "STATE ↔ STATEFP",
+        "NAME ↔ STATE_NAME"
+      ],
+      "score": 89,
+      "reason": "79% of census_popest_state_2024 keys found in census_states_2020; census_states_2020.STATE_NAME is unique; names match (NAME ↔ STATE_NAME).",
+      "receipt": {
+        "matched": "52 of 66",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.7878787878787878,
+        "leftOver": "5 of 57",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [
+          "9 of 14 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "All 14 unmatched rows have STATE = 00 (00 is 21% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r13-popest-state-vs-popest-county",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATE ↔ STATE",
+      "accept": [
+        "STATE ↔ STATE",
+        "NAME ↔ STNAME"
+      ],
+      "score": 95,
+      "reason": "96% of census_popest_state_2024 keys found in census_popest_county_2024; names match (STATE ↔ STATE); census_popest_state_2024.STATE is unique except for 14 rows that share 00.",
+      "receipt": {
+        "matched": "51 of 66",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.7727272727272727,
+        "leftOver": "0 of 3195",
+        "fanout": 62.65,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [
+          "9 of 15 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "5 of 15 unmatched rows have DIVISION = 0 (0 is 8% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r14-places-vs-states",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATE ↔ STATE",
+      "accept": [
+        "STATEFP ↔ STATEFP",
+        "STATE ↔ STATE"
+      ],
+      "score": 100,
+      "reason": "100% of census_places_2020 keys found in census_states_2020; census_states_2020.STATE is unique; names match (STATE ↔ STATE).",
+      "receipt": {
+        "matched": "32188 of 32188",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "1 of 57",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r15-places-vs-popest-state",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATEFP ↔ STATE",
+      "accept": [
+        "STATEFP ↔ STATE"
+      ],
+      "score": 79,
+      "reason": "93% of census_places_2020 keys found in census_popest_state_2024; census_popest_state_2024.STATE is unique except for 14 rows that share 00.",
+      "receipt": {
+        "matched": "31909 of 32188",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.9913321734808003,
+        "leftOver": "14 of 66",
+        "fanout": 1,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [
+          "57 of 279 unmatched rows have STATE = GU (GU is <1% of the file).",
+          "135 of 279 unmatched rows have STATE = MP (MP is <1% of the file)."
+        ],
+        "patternsRight": [
+          "9 of 14 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "5 of 14 unmatched rows have DIVISION = 0 (0 is 8% of the file)."
+        ]
+      }
+    },
+    {
+      "id": "r16-delineation-vs-states",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "State Name ↔ STATE_NAME",
+      "accept": [
+        "FIPS State Code ↔ STATEFP",
+        "State Name ↔ STATE_NAME"
+      ],
+      "score": 100,
+      "reason": "100% of omb_cbsa_delineation_2023 keys found in census_states_2020; census_states_2020.STATE_NAME is unique; names match (State Name ↔ STATE_NAME).",
+      "receipt": {
+        "matched": "1915 of 1915",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "5 of 57",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r17-gaz-counties-vs-states",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "USPS ↔ STATE",
+      "accept": [
+        "USPS ↔ STATE"
+      ],
+      "score": 85,
+      "reason": "100% of census_gazetteer_counties_2024 keys found in census_states_2020; census_states_2020.STATE is unique.",
+      "receipt": {
+        "matched": "3222 of 3222",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "5 of 57",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r18-popest-state-vs-laus",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "STATE ↔ State FIPS Code",
+      "accept": [
+        "STATE ↔ State FIPS Code"
+      ],
+      "score": 85,
+      "reason": "98% of census_popest_state_2024 keys found in bls_laus_county_2024; census_popest_state_2024.STATE is unique except for 14 rows that share 00.",
+      "receipt": {
+        "matched": "52 of 66",
+        "matchRateBefore": null,
+        "matchRateAfter": 0.7878787878787878,
+        "leftOver": "0 of 3221",
+        "fanout": 61.94,
+        "fanoutWarning": true,
+        "cleanup": null,
+        "patternsLeft": [
+          "9 of 14 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "5 of 14 unmatched rows have DIVISION = 0 (0 is 8% of the file)."
+        ],
+        "patternsRight": []
+      }
+    },
+    {
+      "id": "r19-delineation-vs-popest-state",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "State Name ↔ NAME",
+      "accept": [
+        "FIPS State Code ↔ STATE",
+        "State Name ↔ NAME"
+      ],
+      "score": 93,
+      "reason": "100% of omb_cbsa_delineation_2023 keys found in census_popest_state_2024; census_popest_state_2024.NAME is unique; names match (State Name ↔ NAME).",
+      "receipt": {
+        "matched": "1915 of 1915",
+        "matchRateBefore": null,
+        "matchRateAfter": 1,
+        "leftOver": "14 of 66",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": null,
+        "patternsLeft": [],
+        "patternsRight": [
+          "9 of 14 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "All 14 unmatched rows have STATE = 00 (00 is 21% of the file)."
+        ]
+      }
+    },
+    {
+      "id": "r20-gaz-counties-vs-popest-state",
+      "family": "real-one-column",
+      "correct": true,
+      "got": "USPS ↔ NAME",
+      "accept": [
+        "USPS ↔ NAME",
+        "USPS ↔ STATE"
+      ],
+      "score": 77,
+      "reason": "100% of census_gazetteer_counties_2024 keys found in census_popest_state_2024 after abbr → name lookup, ignoring case, trimming spaces; census_popest_state_2024.NAME is unique.",
+      "receipt": {
+        "matched": "3222 of 3222",
+        "matchRateBefore": 0,
+        "matchRateAfter": 1,
+        "leftOver": "14 of 66",
+        "fanout": 1,
+        "fanoutWarning": false,
+        "cleanup": "abbr → name lookup, ignoring case, trimming spaces",
+        "patternsLeft": [],
+        "patternsRight": [
+          "9 of 14 unmatched rows have SUMLEV = 030 (030 is 14% of the file).",
+          "All 14 unmatched rows have STATE = 00 (00 is 21% of the file)."
+        ]
       }
     }
   ]

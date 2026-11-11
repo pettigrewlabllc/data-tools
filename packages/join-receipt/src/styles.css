@@ -69,6 +69,10 @@ select, input[type='text'], input[type='password'], input:not([type]) {
   font: inherit; font-size: 0.95rem; padding: 0.4em 0.5em; border-radius: 6px; border: 1px solid var(--line);
   background: var(--surface); color: var(--ink); max-width: 100%;
 }
+/* Safari counts a select's longest option toward the page width even when the box is clamped, which scrolls the page sideways on a phone. */
+select { overflow: hidden; text-overflow: ellipsis; }
+/* And in case another engine leaks something else: nothing inside a card may widen the page. */
+.card, .file { overflow-x: clip; }
 
 .drop { margin-top: 24px; padding: 20px; border: 2px dashed var(--line); border-radius: 14px; background: var(--surface); }
 .drop.is-dragging { border-color: var(--accent); }
@@ -148,7 +152,6 @@ legend { color: var(--muted); padding: 0 4px; }
 .tabs button { border-radius: 8px 8px 0 0; }
 .tabs .is-on { background: var(--paper); border-bottom-color: var(--paper); font-weight: 600; }
 .code { position: relative; }
-.code .copy { position: absolute; right: 8px; top: 6px; }
 
 .foot { margin-top: 40px; color: var(--muted); font-size: 0.9rem; }
 
@@ -186,3 +189,19 @@ button, .button { border-radius: 0; border-color: var(--ink); }
 .fanout, .warn { border-left: 4px solid var(--bad); border-radius: 0; }
 .tabs button { border-radius: 0; }
 code.colname { overflow-wrap: normal; word-break: keep-all; }
+
+/* The example receipt on the empty page. */
+.example-on { color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; margin: 0; }
+.example .paper { margin-bottom: 8px; }
+.foot a { color: inherit; }
+
+.code-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.code-bar .copy { margin-left: auto; }
+.downloads button { max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.pick select { flex: 1 1 10rem; min-width: 0; }
+@media (max-width: 560px) {
+  /* Phones: tables fit without a sideways nudge, and code wraps so a whole line is readable (copying keeps the original). */
+  th, td { padding: 4px 3px; }
+  .payload pre, .code pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+}

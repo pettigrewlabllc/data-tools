@@ -4,6 +4,8 @@ export interface Features {
   containLeft: number; containRight: number; overlap: number;
   leftUnique: boolean; rightUnique: boolean; formatMatch: boolean; nameSim: number;
   minDistinct: number; bothRowNumbers: boolean;
+  /** Set when a side is unique except for one shared value (see ColumnProfile.nearUnique). */
+  leftNearUnique?: { value: string; rows: number } | null; rightNearUnique?: { value: string; rows: number } | null;
 }
 
 export const SCORE_LABEL = 'heuristic, not a probability';
@@ -49,9 +51,11 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
  */
 export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef, also: KeyPair[] = []): { score: number; reason: string } {
   const contain = Math.max(f.containLeft, f.containRight);
-  let s = 100 * (0.45 * contain + 0.25 * (f.leftUnique || f.rightUnique ? 1 : 0) + 0.15 * (f.formatMatch ? 1 : 0) + 0.15 * f.nameSim);
+  const near = !f.leftUnique && !f.rightUnique ? (f.rightNearUnique ? { side: right, ...f.rightNearUnique } : f.leftNearUnique ? { side: left, ...f.leftNearUnique } : null) : null;
+  let s = 100 * (0.45 * contain + 0.25 * (f.leftUnique || f.rightUnique ? 1 : near ? 0.8 : 0) + 0.15 * (f.formatMatch ? 1 : 0) + 0.15 * f.nameSim);
   const notes: string[] = [];
-  if (!f.leftUnique && !f.rightUnique) { s -= 30; notes.push('neither side is unique, so rows would multiply'); }
+  if (near) notes.push(`${near.side.table}.${near.side.column} is unique except for ${near.rows} rows that share ${near.value}`);
+  else if (!f.leftUnique && !f.rightUnique) { s -= 30; notes.push('neither side is unique, so rows would multiply'); }
   if (f.minDistinct < 3) { s -= 60; notes.push('too few distinct values to be a key'); }
   if (f.bothRowNumbers) { s -= 45; notes.push('both columns look like row numbers'); }
   const all = [left, right, ...also.flatMap((p) => [p.left, p.right])];
