@@ -71,6 +71,8 @@ select, input[type='text'], input[type='password'], input:not([type]) {
 }
 /* Safari counts a select's longest option toward the page width even when the box is clamped, which scrolls the page sideways on a phone. */
 select { overflow: hidden; text-overflow: ellipsis; }
+/* And in case another engine leaks something else: nothing inside a card may widen the page. */
+.card, .file { overflow-x: clip; }
 
 .drop { margin-top: 24px; padding: 20px; border: 2px dashed var(--line); border-radius: 14px; background: var(--surface); }
 .drop.is-dragging { border-color: var(--accent); }

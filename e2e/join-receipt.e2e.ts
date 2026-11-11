@@ -105,7 +105,10 @@ for (const scheme of ['light', 'dark'] as const) {
     const results = await new AxeBuilder({ page }).analyze();
     const bad = results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
     expect(bad.map((v) => `${v.id}: ${v.help} (${v.nodes.length}) ${v.nodes[0]?.target}`)).toEqual([]);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'no sideways scroll').toBe(true);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth ? [] :
+      Array.from(document.querySelectorAll('body *')).filter((e) => (e as HTMLElement).scrollWidth > innerWidth || e.getBoundingClientRect().right > innerWidth + 0.5)
+        .slice(-5).map((e) => `${e.tagName.toLowerCase()}.${e.className} sw=${(e as HTMLElement).scrollWidth} right=${Math.round(e.getBoundingClientRect().right)}`));
+    expect(wide, 'no sideways scroll (these are the widest elements)').toEqual([]);
     await info.attach(`${scheme}`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
   });
 }
