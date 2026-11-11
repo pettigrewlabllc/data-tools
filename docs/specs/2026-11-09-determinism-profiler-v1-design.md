@@ -172,7 +172,7 @@ packages/determinism-profiler/
   src/report/{model,terminal,markdown,html}.ts
   src/trace.ts          schema types and writer
   test/*.test.ts        vitest
-fixtures/determinism-profiler/   cases + accuracy.ts + accuracy.json
+fixtures/determinism-profiler/   cases + accuracy.mts + accuracy.json; real/ for real-data checks
 docs/adr/0005-hash-only-traces.md, 0006-attribution-rule.md, 0007-no-bundled-python.md
 .github/workflows/determinism-profiler.yml
 ```
