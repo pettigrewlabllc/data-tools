@@ -4,7 +4,8 @@ import { accessSync, constants, existsSync, mkdtempSync, readdirSync, readFileSy
 import { homedir, tmpdir } from 'node:os';
 import { delimiter, join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { Fingerprinter, bytesFingerprint, identity, type Fingerprint } from '../fingerprint.js';
+import { bytesFingerprint, identity, type Fingerprint } from '../fingerprint.js';
+import { fingerprintInDuckDB } from '../fingerprint-sql.js';
 import { checkStatement, splitStatements } from '../static/sql.js';
 import type { Finding, StepKind, TraceStep } from '../types.js';
 import { EnvError } from './notebook.js';
@@ -123,10 +124,7 @@ function listDir(p: string) {
 const q = (s: string) => '"' + s.replaceAll('"', '""') + '"';
 
 async function fingerprintRelation(conn: Awaited<ReturnType<DuckDBInstance['connect']>>, schema: string, name: string): Promise<Fingerprint> {
-  const result = await conn.stream(`SELECT * FROM ${q(schema)}.${q(name)}`);
-  const fp = new Fingerprinter(result.columnNames(), false);
-  for await (const rows of result.yieldRowsJson()) for (const row of rows) fp.addRow(row as unknown[]);
-  return fp.finish();
+  return fingerprintInDuckDB(conn, `${q(schema)}.${q(name)}`, false);
 }
 
 /** One run: dbt build --full-refresh, then fingerprint every built relation and every source. */

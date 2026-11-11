@@ -15,6 +15,7 @@ export const VERDICT: Record<Verdict, string> = {
 export const CAUSE: Record<Cause, { name: string; why: string; fix: string }> = {
   timestamp: { name: 'current time', why: 'Uses the current time, so every run gets a new value.', fix: 'Pass the date in as a parameter, or pin it.' },
   random: { name: 'random numbers', why: 'Draws random numbers with no seed.', fix: 'Set a seed before the first draw.' },
+  unseeded_model: { name: 'unseeded model', why: 'Trains a model that uses randomness, with no random_state.', fix: 'Pass random_state=42 or similar.' },
   unseeded_sample: { name: 'unseeded sample', why: 'Takes a random sample with no seed.', fix: 'Pass a seed: random_state= in pandas, REPEATABLE (n) in SQL.' },
   unordered_limit: { name: 'LIMIT without ORDER BY', why: "Which rows come back isn't defined.", fix: 'Add an ORDER BY on a unique column.' },
   ties: { name: 'ties', why: "Sorts or ranks on columns that can tie, and which row wins a tie isn't defined.", fix: 'Add a tiebreaker (an id column) to the ORDER BY.' },
@@ -75,6 +76,7 @@ export function causeText(f: Finding): string {
   const c = CAUSE[f.cause];
   let fix = c.fix;
   if (f.cause === 'unseeded_sample') fix = f.file.endsWith('.sql') ? 'Give it a seed: REPEATABLE (n), or (bernoulli, n) in DuckDB.' : 'Pass a seed: random_state=42 or similar.';
+  if (f.cause === 'ties' && !f.file.endsWith('.sql')) fix = 'Sort by a tiebreaker column too, like an id.';
   if (f.cause === 'set_order') fix = f.file.endsWith('.sql') ? 'Put an ORDER BY inside the aggregate.' : 'Use sorted() instead of list() on the set.';
   return `${c.name}: ${c.why} ${fix}`;
 }

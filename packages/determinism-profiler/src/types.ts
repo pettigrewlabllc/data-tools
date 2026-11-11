@@ -3,7 +3,7 @@ import type { Fingerprint } from './fingerprint.js';
 export type InputKind = 'notebook' | 'sql' | 'dbt';
 export type StepKind = 'cell' | 'sql' | 'dbt_model' | 'dbt_seed' | 'dbt_snapshot' | 'source';
 
-export type Cause = 'timestamp' | 'random' | 'unseeded_sample' | 'unordered_limit' | 'ties' | 'set_order' | 'float_order' | 'ai_step';
+export type Cause = 'timestamp' | 'random' | 'unseeded_sample' | 'unseeded_model' | 'unordered_limit' | 'ties' | 'set_order' | 'float_order' | 'ai_step';
 
 export interface Finding {
   file: string;

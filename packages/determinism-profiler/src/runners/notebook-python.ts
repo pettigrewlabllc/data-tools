@@ -229,7 +229,9 @@ def _dp_fp(v, depth=0):
         if isinstance(v, np.ndarray):
             import pandas as pd
             a = v.reshape(len(v), -1) if v.ndim >= 1 and len(v) else v.reshape(1, -1)
-            return _dp_frame(pd.DataFrame(a))
+            f = _dp_frame(pd.DataFrame(a))
+            f["columns"] = {}  # an array's columns are just positions; naming them helps nobody
+            return f
     except ImportError:
         pass
     if isinstance(v, (str, bytes, int, float, complex, bool, type(None))) or tn.startswith("numpy.") or tn.startswith("pandas._libs"):

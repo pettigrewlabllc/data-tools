@@ -2,6 +2,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { Fingerprinter, bytesFingerprint, identity, sourceHash, type Fingerprint } from '../fingerprint.js';
+import { fingerprintInDuckDB, fingerprintQueryInDuckDB } from '../fingerprint-sql.js';
 import { checkStatement, referencesOf, shapeOf, splitStatements, type Statement, type StatementShape } from '../static/sql.js';
 import type { Finding, TraceStep } from '../types.js';
 
@@ -79,7 +80,10 @@ export function planSql(path: string): SqlPlan {
         shape.kind === 'copy' ? `copy to ${shape.copyTo}` :
         shape.kind === 'result' ? `query` : st.tokens[0]?.text ?? 'statement';
       steps.push({ id, file: rel, line: st.line, statement: st, shape, label, parents: [...parents], files: srcFiles, isStep });
-      findings.push(...checkStatement(st, rel, id, state));
+      // Only statements that produce something are checked. Schema DDL (a column's DEFAULT now()),
+      // functions, SET and friends aren't analysis steps; flagging them buried real findings in a pg_dump.
+      const f = checkStatement(st, rel, id, state);
+      if (isStep) findings.push(...f);
       if ((shape.kind === 'relation' || shape.kind === 'mutation') && shape.target) producer.set(shape.target.toLowerCase(), id);
       void i;
     });
@@ -142,11 +146,13 @@ export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Pr
       };
       try {
         if (s.shape.kind === 'result') {
-          step.outputs.result = await fingerprintQuery(conn, s.statement.text, true);
+          // DuckDB-side hashing; statements that can't sit inside CREATE TABLE AS (DESCRIBE, SUMMARIZE) stream instead.
+          try { step.outputs.result = await fingerprintQueryInDuckDB(conn, s.statement.text); }
+          catch { step.outputs.result = await fingerprintQuery(conn, s.statement.text, true); }
         } else {
           await conn.run(s.statement.text);
           if ((s.shape.kind === 'relation' || s.shape.kind === 'mutation') && s.shape.target) {
-            step.outputs[s.shape.target] = await fingerprintQuery(conn, `SELECT * FROM ${q(s.shape.target)}`, false);
+            step.outputs[s.shape.target] = await fingerprintInDuckDB(conn, q(s.shape.target), false);
           } else if (s.shape.kind === 'copy' && s.shape.copyTo) {
             const p = resolve(plan.root, s.shape.copyTo);
             step.outputs[s.shape.copyTo] = existsSync(p) ? bytesFingerprint(readFileSync(p)) : { ...bytesFingerprint(new Uint8Array()), skipped: 'no file written' };

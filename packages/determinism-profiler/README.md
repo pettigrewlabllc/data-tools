@@ -12,6 +12,13 @@ npx determinism-profiler sql/
 npx determinism-profiler my_dbt_project/
 ```
 
+To see it work before pointing it at your own analysis, run it on the sample notebook in this repo. Its second cell takes a sample with no seed and prints nothing, and the report blames that cell, not the chart two cells later:
+
+```bash
+npx determinism-profiler fixtures/determinism-profiler/nb-sample/analysis.ipynb
+npx determinism-profiler fixtures/determinism-profiler/sql-ties
+```
+
 ![The HTML report for the dbt fixture](../../docs/screens/report-1280-light.png)
 
 ## What you get
@@ -82,7 +89,8 @@ It also tells apart the kinds of change, because they don't all matter the same:
 |---|---|---|
 | Current time | `now()`, `current_timestamp`, `current_date` | `datetime.now()`, `pd.Timestamp('now')`, `time.time()` |
 | Random numbers | `random()`, `uuid()` with no `setseed` | `np.random.*`, `random.*` with no seed; `default_rng()` |
-| Sample with no seed | `USING SAMPLE`, `TABLESAMPLE` without a seed | `.sample()` without `random_state`, `train_test_split`, unseeded sklearn models |
+| Sample with no seed | `USING SAMPLE`, `TABLESAMPLE` without a seed | `.sample()` without `random_state`, `train_test_split`, `KFold(shuffle=True)` |
+| Model with no seed | | random forests, k-means, gradient boosting, XGBoost and LightGBM without `random_state` |
 | Set order | `string_agg`, `list`, `array_agg` with no `ORDER BY`; `first()`, `any_value()` | `list(set(...))`, `', '.join(set(...))` |
 | Ties | `ROW_NUMBER() OVER (... ORDER BY ...)`, `ORDER BY ... LIMIT` | `.sort_values().head()`, `nlargest()` |
 | LIMIT with no ORDER BY | yes | |
@@ -101,7 +109,14 @@ Fourteen fixtures in [`fixtures/determinism-profiler`](../../fixtures/determinis
 | Fixtures where the blame landed on the right step | 14 of 14 |
 | Causes reported on the clean fixtures | 0 |
 
-That same million-row test turned up something none of the fixtures had to fake: a plain `GROUP BY g` with `sum(x)` over a million doubles gave different last digits between runs, because DuckDB adds in parallel. The profiler reported it as a change in the last few digits, not as wrong numbers.
+Fixtures only prove it finds what I planted, so it also runs against real public data, written the way people actually write analyses ([`real/`](../../fixtures/determinism-profiler/real), `npm run accuracy:real`):
+
+- **Chinook:** a genre list built with `string_agg(DISTINCT ...)` came back in a different order every run.
+- **NYC taxi, 2.96 million rows:** an unseeded `USING SAMPLE 1%`. Three runs take about a second and a half.
+- **MovieLens, in a Kaggle-style notebook:** `list(set(...))` and an unseeded `.sample()` are the two places it starts. The train/test split, the random forest and the MAE all move because of the sample, and the forest's missing `random_state` shows up as "also check".
+- **Pagila's Postgres dump:** three views that build actor lists with `array_agg` and `group_concat` and no ORDER BY. Nothing flagged from the 3,000 lines of DDL around them.
+
+Real data also showed the limit of three runs. Chinook's "best customer per country" ranks on total spent, and some countries have customers who spent exactly the same. Three runs catch that tie some of the time, not every time. Same with averages over the 3 million taxi rows, which DuckDB adds in parallel: the last digits move on some runs. That's why tie warnings stay on the report as "worth a look" even when the runs matched. Matching three times isn't proof.
 
 A test plants made-up values in the data, in SQL and code literals, in a failing `CAST` and in a cell that raises on one, then checks that none of them shows up in anything the profiler writes.
 
@@ -110,7 +125,7 @@ A test plants made-up values in the data, in SQL and code literals, in a failing
 - A notebook cell that changes a variable it never names (a function that mutates a global) isn't seen. Calling a notebook function that reads a variable is handled.
 - Images and widgets in cell output aren't compared.
 - dbt views are re-run when read, so a random view's fingerprint can differ from what the next model saw. Tables are exact.
-- Big tables are fingerprinted row by row in Node. A million-row table took about 4.5 seconds a run on a MacBook (13.5 seconds for three runs, 316 MB of memory). That's fine for analysis-sized data and slow for a warehouse.
+- Tables, views, query results and dbt models are fingerprinted inside DuckDB, so size isn't the problem: three runs over a million rows take half a second. Notebook DataFrames are hashed with pandas in your kernel.
 
 ## Develop
 

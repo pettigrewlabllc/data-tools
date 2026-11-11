@@ -18,8 +18,12 @@ describe('Python cell checks', () => {
     expect(causes("r = client.messages.create(model='m')")).toEqual(['ai_step@1']);
   });
   it('sklearn: random_state counts as a seed', () => {
-    expect(causes('a, b = train_test_split(X)\nm = RandomForestClassifier()')).toEqual(['unseeded_sample@1', 'unseeded_sample@2']);
+    expect(causes('a, b = train_test_split(X)\nm = RandomForestClassifier()')).toEqual(['unseeded_sample@1', 'unseeded_model@2']);
     expect(causes('a, b = train_test_split(X, random_state=0)\nX = shuffle(X, random_state=0)')).toEqual([]);
+  });
+  it('models with randomness need random_state; KFold only when shuffling', () => {
+    expect(causes('m = RandomForestRegressor(n_estimators=30)\nk = KMeans(3, random_state=0)')).toEqual(['unseeded_model@1']);
+    expect(causes('cv = KFold(5)\ncv2 = KFold(5, shuffle=True)')).toEqual(['unseeded_sample@2']);
   });
   it('sets: list(set()) is a candidate, sorted(set()) is fine', () => {
     expect(causes('r = list(set(names))')).toEqual(['set_order@1']);

@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "accuracy": "tsx ../../fixtures/determinism-profiler/accuracy.ts",
+    "accuracy:real": "tsx ../../fixtures/determinism-profiler/real/real.ts",
     "dp": "tsx src/cli.ts"
   },
   "dependencies": {
