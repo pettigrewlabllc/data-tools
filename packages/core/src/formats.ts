@@ -76,6 +76,9 @@ export function classifyColumn(c: ClassifyInput): FormatClass {
   if (iso2 >= 0.9) return 'iso2';
   if (most((v) => ISO3.has(v.toUpperCase()))) return 'iso3';
   if (most((v) => STATE_NAME.has(v.toUpperCase()))) return 'us_state_name';
+  // Census state files list the U.S., regions and divisions beside the states, so allow a quarter of other names
+  // when the column is named like one.
+  if (hint('name', 'state') && share((v) => STATE_NAME.has(v.toUpperCase())) >= 0.75) return 'us_state_name';
   if (most((v) => COUNTRY_NAME.has(v.toUpperCase()))) return 'country_name';
 
   if (isInt && hint('year', 'yr') && most((v) => /^\d{4}$/.test(v) && +v >= 1800 && +v <= 2100)) return 'year';

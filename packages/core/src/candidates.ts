@@ -88,6 +88,9 @@ export async function scorePair(db: Db, lp: TableProfile, rp: TableProfile, lc: 
     nameSim: nameSimilarity(lc.name, rc.name, lp.table, rp.table),
     minDistinct: Math.min(lc.distinct, rc.distinct),
     bothRowNumbers: lc.rowNumber && rc.rowNumber,
+    // Only when the key is used as is: a transform can merge values, so the profile's count no longer applies.
+    leftNearUnique: chain.left.length ? null : lc.nearUnique ?? null,
+    rightNearUnique: chain.right.length ? null : rc.nearUnique ?? null,
   };
   const { score, reason } = scoreCandidate(features, left, right);
   return { left, right, features, score, reason };
