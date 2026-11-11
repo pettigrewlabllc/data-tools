@@ -122,11 +122,13 @@ export function App() {
       <header className="masthead">
         <h1>Join Receipt</h1>
         <p className="lede">
-          Before you join two tables, see what the join costs. What matched, what dropped and what the dropped rows have in common,
-          and whether anything gets counted twice. Then take the fix with you as SQL, Python and a decision file.
+          Drop in two files and it finds the column that joins them. Then it tells you what the join costs: how many rows matched,
+          what the ones that didn't have in common, and whether anything gets counted twice. You check its pick, change it if
+          it's wrong, and take the fix with you as SQL or pandas code.
         </p>
         <p className="privacy">
-          Your files stay in this browser. Nothing is uploaded unless you connect a model, and then you see exactly what gets sent first.
+          Your files stay in this browser. Nothing is uploaded. There's an optional helper that drafts cleanup steps with an AI
+          model, but it's off until you connect one, it shows you exactly what it would send first, and it never picks the join.
         </p>
       </header>
 
@@ -145,7 +147,7 @@ export function App() {
           </label>
           {profiles.length > 0 && <button className="quiet" onClick={reset}>Start over</button>}
         </div>
-        <p className="hint">Or drop CSV, Excel, Parquet or JSON files here, 2 to 10 of them.</p>
+        <p className="hint">Or drop CSV, Excel, Parquet or JSON files here, 2 to 10 of them. On a phone, the sample is the quick way to see it.</p>
         {status && <p className="status" role="status">{status}</p>}
         {errors.length > 0 && (
           <ul className="errors" role="alert">
@@ -153,6 +155,27 @@ export function App() {
           </ul>
         )}
       </section>
+
+      {profiles.length === 0 && phase !== 'loading' && (
+        <section aria-labelledby="example-h">
+          <h2 id="example-h">What you get back</h2>
+          <article className="card example">
+            <p className="example-on">counties.csv joined to unemployment_2024.csv on the county FIPS code</p>
+            <div className="paper">
+              <dl>
+                <div><dt>Matched</dt><dd>208 of 216 counties</dd></div>
+                <div><dt>Didn't match</dt><dd>8 rows. <span className="pattern">All 8 have state = AK.</span></dd></div>
+                <div><dt>Cleanup</dt><dd>One file had dropped the leading zero (1001 for 01001). Zero-padding to 5 took the match rate from 81.9% to 96.3%.</dd></div>
+                <div><dt>Double counting</dt><dd>None on this join. On the daily visits file it multiplies rows, and it offers to roll the file up first.</dd></div>
+              </dl>
+            </div>
+            <p className="hint">
+              That's the sample data. Try it and you get this receipt for every pair of files, plus the joined CSV, the SQL, the
+              pandas code and a small file that records every choice, so the same join runs the same way next month.
+            </p>
+          </article>
+        </section>
+      )}
 
       {profiles.length > 0 && (
         <section aria-labelledby="files-h">
@@ -185,7 +208,10 @@ export function App() {
       {cards.length > 0 && <ExportPanel cards={cards} profiles={profiles} db={() => db()} copies={copiesRef.current} />}
 
       <footer className="foot">
-        <p>Free and open source. Every number on this page comes from SQL run by DuckDB on your machine.</p>
+        <p>
+          Free and open source (MIT). <a href="https://github.com/pettigrewlabllc/data-tools">The code is on GitHub</a>.
+          Made by <a href="https://pettigrewlab.com">Pettigrew Lab</a>. Every number on this page comes from SQL run by DuckDB, in your browser.
+        </p>
       </footer>
     </div>
   );

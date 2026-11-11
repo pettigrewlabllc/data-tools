@@ -190,3 +190,8 @@ button, .button { border-radius: 0; border-color: var(--ink); }
 .fanout, .warn { border-left: 4px solid var(--bad); border-radius: 0; }
 .tabs button { border-radius: 0; }
 code.colname { overflow-wrap: normal; word-break: keep-all; }
+
+/* The example receipt on the empty page. */
+.example-on { color: var(--muted); font-size: 0.92rem; overflow-wrap: anywhere; margin: 0; }
+.example .paper { margin-bottom: 8px; }
+.foot a { color: inherit; }

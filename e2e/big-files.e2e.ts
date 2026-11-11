@@ -10,7 +10,7 @@ test('large files reach a receipt', async ({ page, browserName }, info) => {
   await page.goto('/');
   const t0 = Date.now();
   await page.setInputFiles('input[type=file]', [`${dir}/customers.csv`, `${dir}/orders.csv`]);
-  await page.waitForFunction(() => document.querySelector('.card .paper') && !document.querySelector('[aria-busy="true"]'), null, { timeout: 280_000 });
+  await page.waitForFunction(() => document.querySelector('.card:not(.example) .paper') && !document.querySelector('[aria-busy="true"]'), null, { timeout: 280_000 });
   const secs = (Date.now() - t0) / 1000;
   await expect(page.locator('.errors')).toHaveCount(0);
   console.log(`BIG ${browserName}/${info.project.name}: ${secs.toFixed(1)}s`);

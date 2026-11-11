@@ -11,7 +11,7 @@ function noExternalRequests(page: Page) {
   return () => expect(external, 'requests that left the page').toEqual([]);
 }
 const settled = (page: Page, cards: number) =>
-  page.waitForFunction((n) => document.querySelectorAll('.card .paper').length >= n && !document.querySelector('[aria-busy="true"]'), cards, { timeout: 60_000 });
+  page.waitForFunction((n) => document.querySelectorAll('.card:not(.example) .paper').length >= n && !document.querySelector('[aria-busy="true"]'), cards, { timeout: 60_000 });
 const card = (page: Page, text: string) => page.locator('.card', { has: page.locator('.on', { hasText: text }) });
 
 test('sample data: receipts, the Alaska pattern, fan-out fixed by a roll-up, and the export matches', async ({ page }) => {
@@ -112,3 +112,13 @@ for (const scheme of ['light', 'dark'] as const) {
     await info.attach(`${scheme}`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
   });
 }
+
+test('the empty page shows an example receipt, and it gives way to the real ones', async ({ page }) => {
+  await page.goto('/');
+  const example = page.locator('.card.example');
+  await expect(example).toContainText('208 of 216 counties');
+  await expect(page.getByRole('link', { name: 'The code is on GitHub' })).toHaveAttribute('href', 'https://github.com/pettigrewlabllc/data-tools');
+  await page.getByRole('button', { name: 'Try the sample data' }).click();
+  await settled(page, 3);
+  await expect(example).toHaveCount(0);
+});
