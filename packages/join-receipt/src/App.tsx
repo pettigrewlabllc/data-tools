@@ -88,6 +88,12 @@ export function App() {
       setCards(next);
       setPhase('ready');
       setStatus('');
+      // Bring the result into view: on a phone it lands well below the buttons, and nothing else says it arrived.
+      requestAnimationFrame(() => {
+        const h = document.getElementById(next.length ? 'joins-h' : 'files-h');
+        h?.focus({ preventScroll: true });
+        h?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
       for (const c of next) if (c.plan && c.pair.reliable) await recompute(c, c.plan, {}, profs);
       for (const c of next) if (c.plan && !c.pair.reliable) await recompute(c, c.plan, {}, profs);
     } catch (e) {
@@ -140,7 +146,11 @@ export function App() {
         aria-label="Add files"
       >
         <div className="drop-actions">
-          <button className="primary" disabled={phase === 'loading'} onClick={() => void loadAll(sampleFiles())}>Try the sample data</button>
+          <button className="primary" disabled={phase === 'loading'} onClick={() => {
+            // The sample replaces whatever is loaded; mixing it with your own files only adds noise pairs.
+            if (profiles.length) location.assign('?sample=1');
+            else void loadAll(sampleFiles());
+          }}>Try the sample data</button>
           <label className={`button ${phase === 'loading' ? 'is-disabled' : ''}`}>
             Add your files
             <input type="file" multiple accept=".csv,.tsv,.txt,.parquet,.json,.ndjson,.jsonl,.xlsx" disabled={phase === 'loading'} onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
@@ -179,7 +189,7 @@ export function App() {
 
       {profiles.length > 0 && (
         <section aria-labelledby="files-h">
-          <h2 id="files-h">What's in your files</h2>
+          <h2 id="files-h" tabIndex={-1}>What's in your files</h2>
           <div className="files">{profiles.map((p) => <FileCard key={p.table} profile={p} grain={grainLabel(p)} />)}</div>
           {profiles.length === 1 && <p className="hint">Add at least one more file to look for joins.</p>}
         </section>
@@ -187,7 +197,7 @@ export function App() {
 
       {cards.length > 0 && (
         <section aria-labelledby="joins-h">
-          <h2 id="joins-h">Proposed joins</h2>
+          <h2 id="joins-h" tabIndex={-1}>Proposed joins</h2>
           <p className="hint">Best first. Change the key, the cleanup or the join type and the receipt recalculates.</p>
           <div className="cards">
             {cards.map((c) => (

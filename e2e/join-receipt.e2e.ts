@@ -34,7 +34,7 @@ test('sample data: receipts, the Alaska pattern, fan-out fixed by a roll-up, and
 
   await ak.getByRole('button', { name: 'Approve' }).click();
   await expect(ak).toContainText('Approved. It goes in your downloads.');
-  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Joined data:/ }).click()]);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Download the joined data:/ }).click()]);
   const rows = readFileSync(await dl.path(), 'utf8').trim().split('\n');
   expect(rows.length - 1).toBe(216);
   await expect(page.locator('.code pre')).toContainText('assert len(');
@@ -66,7 +66,7 @@ test('Excel plus CSV: two-column key proposed, CSV copy offered with the scripts
   await expect(c.locator('.on')).toContainText('and');
   await expect(c.locator('.paper')).toContainText('5 of 6 counties.csv rows');
   await c.getByRole('button', { name: 'Approve' }).click();
-  await expect(page.getByRole('button', { name: 'laus_style.xlsx.csv' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download laus_style.xlsx.csv' })).toBeVisible();
   check();
 });
 
@@ -121,4 +121,22 @@ test('the empty page shows an example receipt, and it gives way to the real ones
   await page.getByRole('button', { name: 'Try the sample data' }).click();
   await settled(page, 3);
   await expect(example).toHaveCount(0);
+});
+
+test('you can join on columns the search did not propose', async ({ page }) => {
+  await page.goto('/');
+  const left = 'id,team\n1,Hawks\n2,Bulls\n3,Suns\n4,Heat\n';
+  const right = 'code,nickname,wins\n10,Hawks,40\n20,Bulls,38\n30,Suns,51\n';
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'teams.csv', mimeType: 'text/csv', buffer: Buffer.from(left) },
+    { name: 'records.csv', mimeType: 'text/csv', buffer: Buffer.from(right) },
+  ]);
+  const c = page.locator('.card.receipt').first();
+  await expect(c).toBeVisible({ timeout: 60_000 });
+  if (await c.locator('details.edit').count()) await c.locator('details.edit summary').click();
+  await c.getByLabel('Key column in teams.csv').selectOption('team');
+  await c.getByLabel('Key column in records.csv').selectOption('nickname');
+  await c.getByRole('button', { name: 'Use these' }).click();
+  await expect(c.locator('.paper')).toContainText('3 of 4 teams.csv rows');
+  await expect(c.locator('.paper')).toContainText('For example: Heat');
 });

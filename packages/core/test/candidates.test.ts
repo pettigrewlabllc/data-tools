@@ -63,3 +63,21 @@ describe('candidates', () => {
     expect(p.best.length).toBeLessThanOrEqual(3);
   });
 });
+
+describe('scoreColumns', () => {
+  it('scores a hand-picked key with the same cleanup search, and falls back to the raw columns', async () => {
+    const { createNodeDb } = await import('@data-tools/core-node');
+    const { loadFile, profileTable, scoreColumns } = await import('../src');
+    const db = await createNodeDb();
+    const taken = new Set<string>();
+    const load = async (n: string, t: string) => { const r = await loadFile(db, n, new TextEncoder().encode(t), taken); if (!r.ok) throw new Error(r.error); return profileTable(db, r.name, r.file); };
+    const a = await load('a.csv', 'fips,x\n1001,1\n1003,2\n6037,3\n');
+    const b = await load('b.csv', 'county,y\n01001,a\n01003,b\n06037,c\n');
+    const c = await scoreColumns(db, a, b, 'fips', 'county');
+    expect(c.left.transforms).toEqual([{ op: 'lpad', width: 5, fill: '0' }]);
+    expect(c.features.containLeft).toBe(1);
+    const none = await scoreColumns(db, a, b, 'x', 'y');
+    expect(none.features.overlap).toBe(0);
+    await expect(scoreColumns(db, a, b, 'nope', 'y')).rejects.toThrow('no column a.nope');
+  });
+});

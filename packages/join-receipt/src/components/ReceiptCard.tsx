@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  describePattern, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
+  describePattern, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
   type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
 } from '@data-tools/core';
 import type { AiState } from './AiPanel';
@@ -50,11 +50,19 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
   const rp = profiles.find((p) => p.table === pair.right)!;
   const titleId = `c-${card.id}`;
 
+  // A key picked by hand is scored like the search's own and added to the list, so it gets an honest score and reason.
+  const pick = async (leftColumn: string, rightColumn: string) => {
+    const c = await scoreColumns(await db(), lp, rp, leftColumn, rightColumn);
+    const best = [...pair.best, c];
+    onPlan({ join: { op: 'join_on', left: c.left, right: c.right, how: plan?.join.how ?? 'left' } }, { pair: { ...pair, best }, choice: best.length - 1 });
+  };
+
   if (!plan || !cand) {
     return (
       <article className="card receipt" aria-labelledby={titleId}>
         <h3 id={titleId}>{lp.file} and {rp.file}</h3>
         <p className="warn">No shared column. Nothing in these two files lines up well enough to join on, so we're not proposing one.</p>
+        <PickColumns lp={lp} rp={rp} onPick={pick} label="If you know the key, join on" />
       </article>
     );
   }
@@ -90,9 +98,8 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
 
       <details className="edit">
         <summary>Change it</summary>
-        {pair.best.length > 1 && (
-          <fieldset>
-            <legend>Key</legend>
+        <fieldset>
+          <legend>Key</legend>
             {pair.best.map((b, i) => (
               <label key={i} className="radio">
                 <input type="radio" name={`key-${card.id}`} checked={card.choice === i}
@@ -100,8 +107,8 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
                 <code>{[b.left.column, ...(b.also ?? []).map((x) => x.left.column)].join(' × ')}</code> = <code>{[b.right.column, ...(b.also ?? []).map((x) => x.right.column)].join(' × ')}</code> <span className="muted">score {b.score}</span>
               </label>
             ))}
-          </fieldset>
-        )}
+          <PickColumns lp={lp} rp={rp} onPick={pick} label="Or join on" />
+        </fieldset>
         <label className="inline">Join type
           <select value={plan.join.how} onChange={(e) => setPlan({ ...plan, join: { ...plan.join, how: e.target.value as 'left' | 'inner' } })}>
             <option value="left">Keep every {lp.file} row (left join)</option>
@@ -160,6 +167,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
           <dd>
             {fmt(r.unmatchedRight)} of {fmt(r.rightRows)} {rfile} {r.rightRows === 1 ? 'row' : 'rows'} found nothing to join to
             {r.patternsRight.map((p, i) => <p key={i} className="pattern">{describePattern(p)}</p>)}
+            {r.unmatchedRight > 0 && unmatched?.right.length ? <p className="muted small">For example: {unmatched.right.slice(0, 4).map((v, i) => <span key={v}>{i ? ", " : ""}<code>{v}</code></span>)}</p> : null}
           </dd>
         </div>
         {plan.aggregateRight && (
@@ -257,12 +265,12 @@ function AlsoEditor({ plan, lp, rp, onChange }: { plan: Plan; lp: TableProfile; 
       )}
       {also.length < MAX_EXTRA_KEYS && freeL.length > 0 && freeR.length > 0 && (
         <div className="inline">
-          <select aria-label={`Column in ${lp.file}`} value={l} onChange={(e) => setL(e.target.value)}>
+          <select aria-label={`Also match on, column in ${lp.file}`} value={l} onChange={(e) => setL(e.target.value)}>
             <option value="">{lp.file} column…</option>
             {freeL.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
           =
-          <select aria-label={`Column in ${rp.file}`} value={r} onChange={(e) => setR(e.target.value)}>
+          <select aria-label={`Also match on, column in ${rp.file}`} value={r} onChange={(e) => setR(e.target.value)}>
             <option value="">{rp.file} column…</option>
             {freeR.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
@@ -343,6 +351,26 @@ function Drafts({ card, plan, receipt, profiles, ai, db, onDrafts, onUse }: {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** Two column pickers, for joining on a key the search didn't propose. */
+function PickColumns({ lp, rp, onPick, label }: { lp: TableProfile; rp: TableProfile; onPick: (l: string, r: string) => Promise<void>; label: string }) {
+  const [l, setL] = useState(lp.columns[0]?.name ?? '');
+  const [r, setR] = useState(rp.columns[0]?.name ?? '');
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="pick">
+      <span>{label}</span>
+      <select aria-label={`Key column in ${lp.file}`} value={l} onChange={(e) => setL(e.target.value)}>
+        {lp.columns.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+      </select>
+      <span>=</span>
+      <select aria-label={`Key column in ${rp.file}`} value={r} onChange={(e) => setR(e.target.value)}>
+        {rp.columns.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+      </select>
+      <button disabled={busy} onClick={() => { setBusy(true); void onPick(l, r).finally(() => setBusy(false)); }}>Use these</button>
     </div>
   );
 }
