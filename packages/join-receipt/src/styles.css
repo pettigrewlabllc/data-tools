@@ -200,3 +200,8 @@ code.colname { overflow-wrap: normal; word-break: keep-all; }
 .downloads button { max-width: 100%; text-align: left; overflow-wrap: anywhere; }
 .pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
 .pick select { flex: 1 1 10rem; min-width: 0; }
+@media (max-width: 560px) {
+  /* Phones: tables fit without a sideways nudge, and code wraps so a whole line is readable (copying keeps the original). */
+  th, td { padding: 4px 3px; }
+  .payload pre, .code pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+}
