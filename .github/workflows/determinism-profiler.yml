@@ -1,0 +1,26 @@
+name: determinism-profiler
+on:
+  push:
+    branches: [main]
+    paths: ['packages/determinism-profiler/**', 'fixtures/determinism-profiler/**', '.github/workflows/determinism-profiler.yml']
+  pull_request:
+    paths: ['packages/determinism-profiler/**', 'fixtures/determinism-profiler/**', '.github/workflows/determinism-profiler.yml']
+jobs:
+  profiler:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/determinism-profiler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install nbconvert ipykernel pandas numpy dbt-core dbt-duckdb
+      - run: npm install
+      - run: npm run typecheck
+      - run: DP_JUPYTER=$(which jupyter) DP_DBT=$(which dbt) npm test
+      - run: DP_JUPYTER=$(which jupyter) DP_DBT=$(which dbt) npm run accuracy
+      - run: git diff --exit-code -- ../../fixtures/determinism-profiler/accuracy.json
+      - run: npm run build

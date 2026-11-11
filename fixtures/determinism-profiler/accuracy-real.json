@@ -1,0 +1,45 @@
+{
+  "cases_run": 4,
+  "passed": 4,
+  "results": {
+    "chinook": {
+      "pass": true,
+      "origins": [
+        "05_genres_by_country.sql:1"
+      ],
+      "findings": [
+        "05_genres_by_country.sql:1 set_order confirmed"
+      ]
+    },
+    "taxi": {
+      "pass": true,
+      "origins": [
+        "05_sample.sql:2"
+      ],
+      "findings": [
+        "05_sample.sql:2 unseeded_sample confirmed"
+      ]
+    },
+    "movielens": {
+      "pass": true,
+      "origins": [
+        "cell-4",
+        "cell-7"
+      ],
+      "findings": [
+        "cell 4:3 set_order confirmed",
+        "cell 7:2 unseeded_sample confirmed",
+        "cell 9:1 unseeded_model upstream"
+      ]
+    },
+    "pagila": {
+      "pass": true,
+      "origins": [],
+      "findings": [
+        "schema.sql:520 set_order latent",
+        "schema.sql:659 set_order latent",
+        "schema.sql:737 set_order latent"
+      ]
+    }
+  }
+}

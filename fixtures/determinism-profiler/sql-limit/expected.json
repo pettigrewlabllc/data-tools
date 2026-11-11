@@ -1,0 +1,14 @@
+{
+  "input": ".",
+  "origins": [],
+  "inherited": [],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "02_peek.sql:2",
+      "cause": "unordered_limit",
+      "status": "candidate"
+    }
+  ],
+  "score": 100
+}

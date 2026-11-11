@@ -1,0 +1,93 @@
+{
+  "cases": 14,
+  "planted_causes_detected": "12/12",
+  "attribution_correct": "14/14",
+  "clean_case_false_positives": 0,
+  "scores_match": "14/14",
+  "per_case": {
+    "dbt-duckdb": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 60
+    },
+    "nb-ai": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 66.7
+    },
+    "nb-clean": {
+      "planted_found": "0/0",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 100
+    },
+    "nb-functions": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 66.7
+    },
+    "nb-now": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 50
+    },
+    "nb-passthrough": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 50
+    },
+    "nb-sample": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 25
+    },
+    "nb-set-order": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 33.3
+    },
+    "sql-agg-order": {
+      "planted_found": "2/2",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 50
+    },
+    "sql-clean": {
+      "planted_found": "0/0",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 100
+    },
+    "sql-limit": {
+      "planted_found": "0/0",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 100
+    },
+    "sql-now-upstream": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 0
+    },
+    "sql-sample": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 50
+    },
+    "sql-ties": {
+      "planted_found": "1/1",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 50
+    }
+  }
+}

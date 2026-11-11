@@ -1,0 +1,27 @@
+{
+  "input": ".",
+  "origins": [
+    "03_tags.sql:2",
+    "04_total.sql:2"
+  ],
+  "inherited": [],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "02_arrivals.sql:2",
+      "cause": "random",
+      "status": "latent"
+    },
+    {
+      "at": "03_tags.sql:2",
+      "cause": "set_order",
+      "status": "confirmed"
+    },
+    {
+      "at": "04_total.sql:2",
+      "cause": "float_order",
+      "status": "confirmed"
+    }
+  ],
+  "score": 50
+}

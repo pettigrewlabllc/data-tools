@@ -1,0 +1,19 @@
+{
+  "input": ".",
+  "origins": [
+    "01_stamped.sql:1"
+  ],
+  "inherited": [
+    "02_daily.sql:1",
+    "03_report.sql:1"
+  ],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "01_stamped.sql:2",
+      "cause": "timestamp",
+      "status": "confirmed"
+    }
+  ],
+  "score": 0
+}
