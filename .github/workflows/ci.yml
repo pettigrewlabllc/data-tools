@@ -21,7 +21,7 @@ jobs:
       - run: npm run accuracy:real
       - run: git diff --exit-code fixtures/join-receipt/accuracy-real.json
       - run: npm run build -w join-receipt
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit firefox
       - run: npx playwright test
       - if: failure()
         uses: actions/upload-artifact@v4

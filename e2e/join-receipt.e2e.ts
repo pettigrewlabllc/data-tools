@@ -87,9 +87,10 @@ test('bad files fail with a reason and the rest still load', async ({ page }) =>
   await settled(page, 1);
 });
 
-test('keyboard only: the sample loads from Enter', async ({ page }) => {
+test('keyboard only: the sample loads from Enter', async ({ page, browserName }) => {
   await page.goto('/');
-  await page.keyboard.press('Tab');
+  // Safari on a Mac skips buttons on Tab unless the user turns that on; Option+Tab is its keyboard path.
+  await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
   await expect(page.getByRole('button', { name: 'Try the sample data' })).toBeFocused();
   await page.keyboard.press('Enter');
   await settled(page, 3);
