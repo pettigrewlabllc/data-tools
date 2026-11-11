@@ -16,7 +16,7 @@ npm run accuracy:real  # the same on real Census and BLS files, writes accuracy-
 
 To check the AI path against a real model on your own machine (Ollama by default, nothing leaves it): `JR_LIVE_MODEL=<ollama model> npx vitest run packages/core/test/ai-live.test.ts`.
 
-`npm run e2e` runs the browser tests against the production build (port 3077): the sample flow, an edit un-approving a join, Excel with a two-column key, bad files, keyboard use, and an axe accessibility scan in light and dark, at 1280px and 390px. They also fail if the page makes any request off its own origin.
+`npm run e2e` runs the browser tests against the production build (port 3077): the sample flow, an edit un-approving a join, Excel with a two-column key, bad files, keyboard use, and an axe accessibility scan in light and dark, at 1280px and 390px, in Chrome, Safari (desktop and iPhone) and Firefox. They also fail if the page makes any request off its own origin.
 
 To also run the generated pandas code inside the tests, point `JR_PYTHON` at a Python that has pandas: `JR_PYTHON=/path/to/python npm test`.
 
@@ -56,21 +56,35 @@ Read that number for what it is. The first run scored 94.4%, and the two misses 
 
 ### On real files
 
-`npm run accuracy:real` runs six pairs built from four files nobody here made: the Census 2020 county and state code lists, the Census 2024 county population estimates, and the BLS 2024 county unemployment workbook. The sources are in [fixtures/join-receipt/real/pairs.json](fixtures/join-receipt/real/pairs.json). The expected key for each pair was written down from how Census and BLS document their files, before the engine ran on them.
+`npm run accuracy:real` runs 20 pairs built from ten public files nobody here made: Census code lists (counties, states, places), Census population estimates (counties and states), the Census 2024 Gazetteer (counties and metro areas), the Census ZCTA to county relationship file, the OMB metro area delineation workbook, and the BLS 2024 county unemployment workbook. The sources are in [fixtures/join-receipt/real/pairs.json](fixtures/join-receipt/real/pairs.json). The expected key for each pair was written down from how the publisher documents the file, before the engine ran on it.
 
-Current result: **6 of 6**. The first run got **3 of 6**, and that's the number worth knowing. All three misses were the same mistake. It joined a state abbreviation (`AL`) through a lookup table when the same file had the FIPS code (`01`) sitting right there, because "STATE" = "STATE" looked like a better name match. Now a lookup key is dropped when a direct column matches at least as many values. The same run also turned up two load bugs that real users would have hit first: the Census CSV is Latin-1 ("Doña Ana County"), which DuckDB won't read, and the code lists are pipe-delimited, which the pandas export didn't handle. Both are fixed.
+Current result: **20 of 20**. It got there in two rounds, and the misses are the part worth knowing.
 
-What the receipts say on these files is the better test, and they hold up:
+The first six pairs scored **3 of 6** on their first run. All three misses were the same mistake. It joined a state abbreviation (`AL`) through a lookup table when the same file had the FIPS code (`01`) sitting right there, because "STATE" = "STATE" looked like a better name match. Now a lookup key is dropped when a direct column matches at least as many values. That run also turned up two load bugs: the Census CSV is Latin-1 ("Doña Ana County"), which DuckDB won't read, and the code lists are pipe-delimited, which the pandas export didn't handle. Both are fixed.
+
+The next 14 pairs were labelled before the engine saw them, and the whole set scored **17 of 20** on its first run. Every miss had the same cause. The Census state population file puts the U.S., 4 regions and 9 divisions beside the 52 states, and all 14 of those rows use state code `00`. So the code column "isn't unique", the join looked like it would multiply rows, and a right key scored too low to be trusted. The NAME column had the same problem: 14 of its 66 values aren't states, so it wasn't recognised as state names at all. Now a column that's unique except for one shared value (in up to a quarter of the rows) counts as nearly unique, and the receipt says so: "unique except for 14 rows that share 00". A column named like a state name counts as one when three quarters of its values are states.
+
+One label was wrong, and it was mine. I'd written "no key" for the Gazetteer against the state population file, forgetting the tool has a state lookup built in. The engine joined postal code to state name through it and matched 3,222 of 3,222. The label is corrected in its own commit with a note, and the first run's 17 counts it as a hit it didn't deserve.
+
+What the receipts say on these files is the better test:
 
 - BLS against Census population: the key is state × county FIPS. "All 78 unmatched rows have State FIPS Code = 72." That's Puerto Rico, which BLS covers and the population estimates don't.
 - BLS against the 2020 code list: "All 9 unmatched rows have State FIPS Code = 09." That's Connecticut, which swapped its counties for planning regions after 2020.
-- The population file also mixes 51 state total rows in with the counties. Those show up as left over, but nothing explains them yet, because the flag that marks them (`SUMLEV`) has two values and the PRD keeps columns under three out of the explanations.
+- The metro area delineation against county population: "All 71 unmatched rows have FIPS State Code = 72." Puerto Rico again, from the other side.
+- The county population file still mixes 51 state total rows in with the counties. Those show up as left over, but nothing explains them, because the flag that marks them (`SUMLEV`) has two values and the PRD keeps columns under three out of the explanations.
 
-Six pairs is a small set. It's real, though, and it's the number to quote.
+Twenty pairs, all U.S. government geography, is still a narrow set. It's the number to quote, with that said next to it.
 
 ## How big a file
 
-Measured in headless Chrome on a MacBook: two CSVs of 500,000 and 400,000 rows (30 MB together) take 2.9 seconds from drop to receipt, and an edit recalculates in 0.6 seconds. At 2.5 million and 2 million rows (100 MB) it's 9.5 seconds and 2.4 seconds. Everything stays in the browser tab, so the ceiling is the tab's memory, not a server.
+Measured on a MacBook, from drop to receipt:
+
+| Two CSVs | Chrome | Safari | Firefox |
+|---|---|---|---|
+| 500,000 and 400,000 rows (30 MB) | 2.9 to 3.9 s | 4.7 s | 23 s |
+| 2.5 million and 2 million rows (100 MB) | 8.5 to 9.5 s | 10.2 s | 90 s |
+
+In Chrome an edit recalculates in 0.6 seconds on the smaller pair and 2.4 on the bigger one. Firefox gets there, but it's several times slower on big files. Everything stays in the browser tab, so the ceiling is the tab's memory, not a server. `JR_BIG=<folder> npx playwright test e2e/big-files.e2e.ts` reruns it on your own pair.
 
 ## Limits right now
 
