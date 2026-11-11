@@ -212,9 +212,11 @@
       "left": "census_gazetteer_counties_2024.txt",
       "right": "census_popest_state_2024.csv",
       "accept": [
-        "none"
+        "USPS ↔ NAME",
+        "USPS ↔ STATE"
       ],
-      "note": "No column connects these directly: the gazetteer has a five-digit GEOID and a postal code, popest has a two-digit state code and a name. The right answer is no reliable key."
+      "note": "Postal code on the left, state code and name on the right, so the key needs the built-in state lookup (abbreviation to name or to FIPS). The left fans out to every county.",
+      "label_corrected": "2026-11-10, after the first run: the original label was \"none\", which forgot that the state lookup exists. The first run scored this pair right for the wrong reason (it said no key, and a lookup key matched 3,222 of 3,222)."
     }
   ],
   "labelled_before_running": "Pairs r7 to r20 were labelled on 2026-11-10 before the engine was run on them."
