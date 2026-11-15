@@ -65,6 +65,6 @@ docs/adr/                decision records
 | 2 | **PrivacyDiff** | Joel's signature; reuses profiling, adds PI classification and the notice check | 5–6 weeks |
 | 3 | **Determinism Profiler** | Small, CLI-only, independent of the web stack; leads to the published study | 3–4 weeks |
 | 4 | **Answerability Check** | Reuses key detection; question mapping is the new part | 3–4 weeks |
-| 5 | **Field Map** | Added 2026-11-14; reuses profiling, format classes and masking; place in the order is Joel's call (its PRD §11) | ~1.5× Join Receipt v1 |
+| 5 | **Field Map** | Added 2026-11-14; reuses profiling, format classes and masking; fifth by Joel's call (2026-11-14), though it was the original ask behind the family's mapping work | ~1.5× Join Receipt v1 |
 
 Any tool can move up; nothing in a later tool waits on an earlier tool, only on the core library pieces it uses.

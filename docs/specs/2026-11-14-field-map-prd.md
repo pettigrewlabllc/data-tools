@@ -219,12 +219,11 @@ Confident precision is the promise; coverage keeps it honest. A tool can hit 100
 | Question | Who | Blocking? |
 |---|---|---|
 | **Join Receipt's PRs (#1–#4, #6–#9) merged to main first.** The core library Field Map reuses exists only on that unmerged stack | Joel | **Yes, before the build starts** |
-| Where it sits in the build order: before or after PrivacyDiff | Joel | Before build |
 | Final name; trademark/domain check | Joel + joel-voice | Before launch page |
 | Coverage targets for example-record and column-list targets, once there's a first run to look at | Joel | No |
 | Licence of the MaDI-Bench data for the held-out set | Data | No (the held-out set can be built without it) |
 
-Resolved: primary user is Leo, the integration developer (Joel, 2026-11-14). In review: JSONata isn't stable across its own minor versions, so the exact version is pinned in `fieldmap.yml`. Masking: raw values on screen with a hide toggle; categorical pass-through in the model payload.
+Resolved: build order, fifth, after PrivacyDiff, even though auto-mapping was the original ask behind this PRD (Joel, 2026-11-14). Primary user is Leo, the integration developer (Joel, 2026-11-14). In review: JSONata isn't stable across its own minor versions, so the exact version is pinned in `fieldmap.yml`. Masking: raw values on screen with a hide toggle; categorical pass-through in the model payload.
 
 ## 12. Phasing
 
