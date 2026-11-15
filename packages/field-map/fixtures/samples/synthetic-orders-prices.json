@@ -1,0 +1,618 @@
+{
+ "orders": [
+  {
+   "order_id": "ORD-10400",
+   "placed_at": "2025-11-14T06:06:25Z",
+   "list_price": 83.99,
+   "sale_price": 83.99,
+   "unit_price": 28,
+   "currency": "USD",
+   "customer": {
+    "id": "C700",
+    "email": "radia.perlman@example.com",
+    "first_name": "Radia",
+    "last_name": "Perlman"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 3,
+     "unit_price_cents": 499
+    },
+    {
+     "sku": "TEA-001",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "SPN-030",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10401",
+   "placed_at": "2025-11-14T07:44:26Z",
+   "list_price": 52.99,
+   "sale_price": 42.39,
+   "unit_price": 21.2,
+   "currency": "USD",
+   "customer": {
+    "id": "C701",
+    "email": "edsger.knuth@example.com",
+    "first_name": "Edsger",
+    "last_name": "Knuth"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 2,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10402",
+   "placed_at": "2025-11-14T09:14:32Z",
+   "list_price": 89.99,
+   "sale_price": 71.99,
+   "unit_price": 24,
+   "currency": "USD",
+   "customer": {
+    "id": "C702",
+    "email": "barbara.lovelace@example.com",
+    "first_name": "Barbara",
+    "last_name": "Lovelace"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 2,
+     "unit_price_cents": 499
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 1,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "SPN-030",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10403",
+   "placed_at": "2025-11-14T10:41:11Z",
+   "list_price": 77.99,
+   "sale_price": 62.39,
+   "unit_price": 62.39,
+   "currency": "USD",
+   "customer": {
+    "id": "C703",
+    "email": "leslie.hopper@example.com",
+    "first_name": "Leslie",
+    "last_name": "Hopper"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10404",
+   "placed_at": "2025-11-14T12:04:10Z",
+   "list_price": 27.99,
+   "sale_price": 25.19,
+   "unit_price": 12.6,
+   "currency": "USD",
+   "customer": {
+    "id": "C704",
+    "email": "margaret.turing@example.com",
+    "first_name": "Margaret",
+    "last_name": "Turing"
+   },
+   "line_items": [
+    {
+     "sku": "BAG-007",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "MUG-014",
+     "quantity": 4,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10405",
+   "placed_at": "2025-11-14T13:42:44Z",
+   "list_price": 57.99,
+   "sale_price": 57.99,
+   "unit_price": 19.33,
+   "currency": "USD",
+   "customer": {
+    "id": "C705",
+    "email": "frances.turing@example.com",
+    "first_name": "Frances",
+    "last_name": "Turing"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 2,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "MUG-014",
+     "quantity": 3,
+     "unit_price_cents": 899
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10406",
+   "placed_at": "2025-11-14T15:18:35Z",
+   "list_price": 39.99,
+   "sale_price": 35.99,
+   "unit_price": 12,
+   "currency": "USD",
+   "customer": {
+    "id": "C706",
+    "email": "grace.lovelace@example.com",
+    "first_name": "Grace",
+    "last_name": "Lovelace"
+   },
+   "line_items": [
+    {
+     "sku": "KET-220",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 2,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "TEA-001",
+     "quantity": 2,
+     "unit_price_cents": 499
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10407",
+   "placed_at": "2025-11-14T16:42:12Z",
+   "list_price": 22.99,
+   "sale_price": 18.39,
+   "unit_price": 9.2,
+   "currency": "USD",
+   "customer": {
+    "id": "C707",
+    "email": "frances.lamport@example.com",
+    "first_name": "Frances",
+    "last_name": "Lamport"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "TEA-001",
+     "quantity": 3,
+     "unit_price_cents": 499
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10408",
+   "placed_at": "2025-11-14T18:12:30Z",
+   "list_price": 42.99,
+   "sale_price": 34.39,
+   "unit_price": 34.39,
+   "currency": "USD",
+   "customer": {
+    "id": "C708",
+    "email": "grace.knuth@example.com",
+    "first_name": "Grace",
+    "last_name": "Knuth"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 2,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10409",
+   "placed_at": "2025-11-14T19:49:02Z",
+   "list_price": 87.99,
+   "sale_price": 79.19,
+   "unit_price": 79.19,
+   "currency": "USD",
+   "customer": {
+    "id": "C700",
+    "email": "grace.dijkstra@example.com",
+    "first_name": "Grace",
+    "last_name": "Dijkstra"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10410",
+   "placed_at": "2025-11-14T21:07:47Z",
+   "list_price": 21.99,
+   "sale_price": 17.59,
+   "unit_price": 17.59,
+   "currency": "USD",
+   "customer": {
+    "id": "C701",
+    "email": "barbara.perlman@example.com",
+    "first_name": "Barbara",
+    "last_name": "Perlman"
+   },
+   "line_items": [
+    {
+     "sku": "MUG-014",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10411",
+   "placed_at": "2025-11-14T22:38:14Z",
+   "list_price": 72.99,
+   "sale_price": 72.99,
+   "unit_price": 72.99,
+   "currency": "USD",
+   "customer": {
+    "id": "C702",
+    "email": "katherine.lamport@example.com",
+    "first_name": "Katherine",
+    "last_name": "Lamport"
+   },
+   "line_items": [
+    {
+     "sku": "BAG-007",
+     "quantity": 2,
+     "unit_price_cents": 899
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10412",
+   "placed_at": "2025-11-15T00:17:31Z",
+   "list_price": 86.99,
+   "sale_price": 69.59,
+   "unit_price": 34.8,
+   "currency": "USD",
+   "customer": {
+    "id": "C703",
+    "email": "donald.dijkstra@example.com",
+    "first_name": "Donald",
+    "last_name": "Dijkstra"
+   },
+   "line_items": [
+    {
+     "sku": "BAG-007",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "MUG-014",
+     "quantity": 2,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10413",
+   "placed_at": "2025-11-15T01:47:27Z",
+   "list_price": 63.99,
+   "sale_price": 63.99,
+   "unit_price": 32,
+   "currency": "USD",
+   "customer": {
+    "id": "C704",
+    "email": "radia.dijkstra@example.com",
+    "first_name": "Radia",
+    "last_name": "Dijkstra"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "KET-220",
+     "quantity": 1,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10414",
+   "placed_at": "2025-11-15T03:10:37Z",
+   "list_price": 34.99,
+   "sale_price": 31.49,
+   "unit_price": 10.5,
+   "currency": "USD",
+   "customer": {
+    "id": "C705",
+    "email": "grace.thompson@example.com",
+    "first_name": "Grace",
+    "last_name": "Thompson"
+   },
+   "line_items": [
+    {
+     "sku": "KET-220",
+     "quantity": 4,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "KET-220",
+     "quantity": 4,
+     "unit_price_cents": 499
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10415",
+   "placed_at": "2025-11-15T04:41:34Z",
+   "list_price": 72.99,
+   "sale_price": 72.99,
+   "unit_price": 72.99,
+   "currency": "USD",
+   "customer": {
+    "id": "C706",
+    "email": "ken.hamilton@example.com",
+    "first_name": "Ken",
+    "last_name": "Hamilton"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10416",
+   "placed_at": "2025-11-15T06:11:34Z",
+   "list_price": 30.99,
+   "sale_price": 27.89,
+   "unit_price": 27.89,
+   "currency": "USD",
+   "customer": {
+    "id": "C707",
+    "email": "ken.lamport@example.com",
+    "first_name": "Ken",
+    "last_name": "Lamport"
+   },
+   "line_items": [
+    {
+     "sku": "BAG-007",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10417",
+   "placed_at": "2025-11-15T07:41:51Z",
+   "list_price": 66.99,
+   "sale_price": 66.99,
+   "unit_price": 66.99,
+   "currency": "USD",
+   "customer": {
+    "id": "C708",
+    "email": "frances.johnson@example.com",
+    "first_name": "Frances",
+    "last_name": "Johnson"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 1,
+     "unit_price_cents": 2450
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10418",
+   "placed_at": "2025-11-15T09:14:11Z",
+   "list_price": 34.99,
+   "sale_price": 31.49,
+   "unit_price": 10.5,
+   "currency": "USD",
+   "customer": {
+    "id": "C700",
+    "email": "katherine.thompson@example.com",
+    "first_name": "Katherine",
+    "last_name": "Thompson"
+   },
+   "line_items": [
+    {
+     "sku": "KET-220",
+     "quantity": 2,
+     "unit_price_cents": 2450
+    },
+    {
+     "sku": "SPN-030",
+     "quantity": 4,
+     "unit_price_cents": 899
+    },
+    {
+     "sku": "SPN-030",
+     "quantity": 3,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10419",
+   "placed_at": "2025-11-15T10:44:27Z",
+   "list_price": 16.99,
+   "sale_price": 15.29,
+   "unit_price": 7.65,
+   "currency": "USD",
+   "customer": {
+    "id": "C701",
+    "email": "ken.hamilton@example.com",
+    "first_name": "Ken",
+    "last_name": "Hamilton"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 2,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "TEA-001",
+     "quantity": 3,
+     "unit_price_cents": 1299
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10420",
+   "placed_at": "2025-11-15T12:13:54Z",
+   "list_price": 18.99,
+   "sale_price": 15.19,
+   "unit_price": 5.06,
+   "currency": "USD",
+   "customer": {
+    "id": "C702",
+    "email": "margaret.perlman@example.com",
+    "first_name": "Margaret",
+    "last_name": "Perlman"
+   },
+   "line_items": [
+    {
+     "sku": "MUG-014",
+     "quantity": 1,
+     "unit_price_cents": 499
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 2,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "BAG-007",
+     "quantity": 3,
+     "unit_price_cents": 899
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10421",
+   "placed_at": "2025-11-15T13:57:32Z",
+   "list_price": 64.99,
+   "sale_price": 51.99,
+   "unit_price": 51.99,
+   "currency": "USD",
+   "customer": {
+    "id": "C703",
+    "email": "alan.johnson@example.com",
+    "first_name": "Alan",
+    "last_name": "Johnson"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 1,
+     "unit_price_cents": 899
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10422",
+   "placed_at": "2025-11-15T15:20:56Z",
+   "list_price": 46.99,
+   "sale_price": 42.29,
+   "unit_price": 42.29,
+   "currency": "USD",
+   "customer": {
+    "id": "C704",
+    "email": "radia.allen@example.com",
+    "first_name": "Radia",
+    "last_name": "Allen"
+   },
+   "line_items": [
+    {
+     "sku": "SPN-030",
+     "quantity": 1,
+     "unit_price_cents": 899
+    }
+   ]
+  },
+  {
+   "order_id": "ORD-10423",
+   "placed_at": "2025-11-15T16:58:58Z",
+   "list_price": 31.99,
+   "sale_price": 31.99,
+   "unit_price": 10.66,
+   "currency": "USD",
+   "customer": {
+    "id": "C705",
+    "email": "alan.turing@example.com",
+    "first_name": "Alan",
+    "last_name": "Turing"
+   },
+   "line_items": [
+    {
+     "sku": "TEA-001",
+     "quantity": 1,
+     "unit_price_cents": 1299
+    },
+    {
+     "sku": "MUG-014",
+     "quantity": 4,
+     "unit_price_cents": 499
+    },
+    {
+     "sku": "KET-220",
+     "quantity": 3,
+     "unit_price_cents": 2450
+    }
+   ]
+  }
+ ]
+}
