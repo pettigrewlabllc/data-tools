@@ -9,6 +9,8 @@ import { describeTransforms } from './score';
 
 export interface Pattern { column: string; value: string; unmatchedCount: number; unmatchedTotal: number; overallShare: number; lift: number }
 export interface TransformSample { side: 'left' | 'right'; raw: string; transformed: string | null }
+/** Distinct raw key values that a case or space cleanup turned into the same key, on one side. */
+export interface Collision { side: 'left' | 'right'; table: string; column: string; keys: number; values: number; example: [string, string]; becomes: string }
 
 export interface Receipt {
   leftRows: number; rightRows: number; joinedRows: number; innerRows: number;
@@ -17,6 +19,7 @@ export interface Receipt {
   fanout: number; maxPerKeyLeft: number; maxPerKeyRight: number; fanoutWarning: boolean;
   patternsLeft: Pattern[]; patternsRight: Pattern[];
   samples: TransformSample[];
+  collisions: Collision[];
   normalisations: string;
   proposedAggregate: Aggregate | null;
   sql: string;
@@ -71,6 +74,21 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     for (const r of rows) samples.push({ side, raw: String(r.raw), transformed: r.k == null ? null : String(r.k) });
   }
 
+  // Case and space cleanups can merge keys that were different on purpose ("ABC" and "abc" as two products).
+  const collisions: Collision[] = [];
+  for (const side of ['left', 'right'] as const) for (const ref of sideRefs(plan.join, side)) {
+    if (!ref.transforms.some((t) => t.op === 'trim' || t.op === 'lower' || t.op === 'upper')) continue;
+    const alias = side === 'left' ? 'l' : 'r', src = side === 'left' ? 'L' : 'R', key = keyExpr(ref, alias);
+    const raw = `CAST(${alias}.${ident(ref.column)} AS VARCHAR)`;
+    const [g] = await q(`SELECT count(*) AS keys, coalesce(sum(n), 0) AS vals, min_by(ex[1], k) AS a, min_by(ex[2], k) AS b, min(k) AS k FROM (
+      SELECT k, count(*) AS n, list_sort(list(raw))[1:2] AS ex FROM (SELECT DISTINCT ${raw} AS raw, ${key} AS k FROM ${src} AS ${alias} WHERE ${raw} IS NOT NULL AND ${key} IS NOT NULL)
+      GROUP BY k HAVING count(*) > 1)`);
+    if (n(g.keys) > 0) {
+      // Two plain columns, not a list: DuckDB-Wasm hands lists back as Arrow vectors, not arrays.
+      collisions.push({ side, table: ref.table, column: ref.column, keys: n(g.keys), values: n(g.vals), example: [String(g.a), String(g.b)], becomes: String(g.k) });
+    }
+  }
+
   const keyCols = (side: 'left' | 'right') => sideRefs(plan.join, side).map((k) => k.column);
   // With a one-column key, the key can't explain its own drops. With several, the other parts can (State FIPS = 72).
   const patternSkip = (side: 'left' | 'right') => (plan.join.also?.length ? [] : keyCols(side));
@@ -87,7 +105,7 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     matchedLeft, unmatchedLeft: leftRows - matchedLeft, matchedRight: n(c.matched_right), unmatchedRight,
     matchRateBefore, matchRateAfter: leftRows ? matchedLeft / leftRows : 0,
     fanout, maxPerKeyLeft: n(c.max_left), maxPerKeyRight, fanoutWarning,
-    patternsLeft, patternsRight, samples,
+    patternsLeft, patternsRight, samples, collisions,
     normalisations: describeTransforms(allRefs.flatMap((k) => k.transforms)),
     proposedAggregate,
     sql: withCtes(p.ctes, p.select),
@@ -133,6 +151,11 @@ const pct = (x: number) => (x < 0.01 && x > 0 ? '<1%' : `${Math.round(x * 100)}%
 export function describePattern(pt: Pattern): string {
   const who = pt.unmatchedCount === pt.unmatchedTotal ? `All ${pt.unmatchedTotal} unmatched rows` : `${pt.unmatchedCount} of ${pt.unmatchedTotal} unmatched rows`;
   return `${who} have ${pt.column} = ${pt.value} (${pt.value} is ${pct(pt.overallShare)} of the file).`;
+}
+
+/** "The cleanup turned 4 different l.csv code values into 2 keys, so rows that were distinct now join as one. ..." */
+export function describeCollision(c: Collision, file: string): string {
+  return `The cleanup turned ${c.values} different ${file} ${c.column} values into ${c.keys} ${c.keys === 1 ? 'key' : 'keys'}, so rows that were distinct now join as one. For example, "${c.example[0]}" and "${c.example[1]}" both became "${c.becomes}".`;
 }
 
 const NUMERIC = /INT|DOUBLE|DECIMAL|FLOAT|REAL/;

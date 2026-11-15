@@ -205,3 +205,4 @@ code.colname { overflow-wrap: normal; word-break: keep-all; }
   th, td { padding: 4px 3px; }
   .payload pre, .code pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
+.collision { background: var(--warn-bg); color: var(--warn-ink); border-left: 4px solid var(--bad); padding: 8px 12px; margin: 12px 0 0; overflow-wrap: anywhere; }
