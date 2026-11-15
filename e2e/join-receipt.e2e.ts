@@ -1,6 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
+import Ajv2019 from 'ajv/dist/2019.js';
+import { parse as parseYaml } from 'yaml';
 
 const XLSX = readFileSync(new URL('../packages/core/test/data/laus_style.xlsx', import.meta.url));
 
@@ -187,4 +189,23 @@ test('the score opens into its parts, and they add up to it', async ({ page }) =
   const nums = (await parts.locator('.sp-n').allTextContents()).map((t) => Number(t.replace('−', '-')));
   expect(nums.reduce((a, b) => a + b, 0)).toBe(91);
   await expect(parts.locator('.sp-total')).toHaveText(/Total\s*91/);
+});
+
+test('contract.yml downloads beside mapping.yml, as ODCS 3.2.0 with the join as a relationship', async ({ page }) => {
+  await page.goto('/?sample=1');
+  await settled(page, 3);
+  const ak = card(page, 'counties.csv.fips = unemployment_2024.csv.county_fips');
+  await ak.getByRole('button', { name: 'Approve' }).click();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download contract.yml' }).click()]);
+  expect(dl.suggestedFilename()).toBe('contract.yml');
+  const text = readFileSync(await dl.path(), 'utf8');
+  expect(text).toContain('apiVersion: v3.2.0');
+  expect(text).toContain('type: foreignKey');
+  expect(text).toContain('from: schema/counties/properties/fips');
+  expect(text).toContain('mustBeGreaterOrEqualTo: 96.2');
+  const schema = JSON.parse(readFileSync(new URL('../packages/core/src/odcs/odcs-3.2.0.schema.json', import.meta.url), 'utf8'));
+  const validate = new Ajv2019({ strict: false, allErrors: true }).compile(schema);
+  expect(validate(parseYaml(text)), JSON.stringify(validate.errors)).toBe(true);
+  await page.getByRole('tab', { name: 'contract.yml' }).click();
+  await expect(page.locator('.code pre')).toContainText('kind: DataContract');
 });
