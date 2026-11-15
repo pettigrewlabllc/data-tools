@@ -1,3 +1,5 @@
+import type { ChangedRowsResult } from '../changed-rows.js';
+import { CHANGED_ROWS as W } from './words.js';
 import type { Report } from '../types.js';
 import { sections } from './sections.js';
 
@@ -17,4 +19,27 @@ export function renderTerminal(r: Report, color = false): string {
     lines.push('');
   }
   return lines.join('\n');
+}
+
+
+/** The --show-changed-rows section. Printed only; nothing else ever renders it. */
+export function renderChangedRows(res: ChangedRowsResult[] | 'not_supported', color = false): string {
+  const c = (code: string, s: string) => (color ? `\u001b[${code}m${s}\u001b[0m` : s);
+  const lines = [c('1;35', W.title)];
+  if (res === 'not_supported') return [...lines, W.notSupported, ''].join('\n');
+  lines.push(c('2', W.lede));
+  if (!res.length) lines.push(`  ${W.none}`);
+  for (const r of res) {
+    if ('skipped' in r) {
+      lines.push(`  • ${r.label}`, `      ${{ no_key: W.noKey, not_kept: W.notKept, view: W.view, error: W.error }[r.skipped]}`);
+      continue;
+    }
+    lines.push(`  • ${W.head(r.label, r.key, r.runA, r.runB)}`);
+    for (const row of r.rows) {
+      const what = row.change === 'only_a' ? W.change.only_a(r.runA) : row.change === 'only_b' ? W.change.only_b(r.runB) : W.change.changed();
+      lines.push(`      ${row.key}: ${what}`);
+    }
+    if (r.more) lines.push(`      ${W.more}`);
+  }
+  return [...lines, ''].join('\n');
 }

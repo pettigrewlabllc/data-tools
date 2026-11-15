@@ -1,9 +1,9 @@
 {
-  "cases": 14,
-  "planted_causes_detected": "12/12",
-  "attribution_correct": "14/14",
+  "cases": 16,
+  "planted_causes_detected": "15/15",
+  "attribution_correct": "16/16",
   "clean_case_false_positives": 0,
-  "scores_match": "14/14",
+  "scores_match": "16/16",
   "per_case": {
     "dbt-duckdb": {
       "planted_found": "1/1",
@@ -53,11 +53,23 @@
       "findings_match": true,
       "score": 33.3
     },
+    "nb-timestamp-print": {
+      "planted_found": "0/0",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 100
+    },
     "sql-agg-order": {
       "planted_found": "2/2",
       "attribution": "right",
       "findings_match": true,
       "score": 50
+    },
+    "sql-changed-rows": {
+      "planted_found": "3/3",
+      "attribution": "right",
+      "findings_match": true,
+      "score": 25
     },
     "sql-clean": {
       "planted_found": "0/0",

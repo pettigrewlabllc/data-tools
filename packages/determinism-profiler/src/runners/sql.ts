@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { Fingerprinter, bytesFingerprint, identity, sourceHash, type Fingerprint } from '../fingerprint.js';
 import { fingerprintInDuckDB, fingerprintQueryInDuckDB } from '../fingerprint-sql.js';
+import { keptRun, type KeepPolicy, type KeptRun } from '../changed-rows.js';
 import { checkStatement, referencesOf, shapeOf, splitStatements, type Statement, type StatementShape } from '../static/sql.js';
 import type { Finding, TraceStep } from '../types.js';
 
@@ -118,9 +119,12 @@ async function fingerprintQuery(conn: DuckDBConnection, sql: string, orderMatter
 const q = (name: string) => '"' + name.replaceAll('"', '""') + '"';
 
 /** One run: fresh in-memory DuckDB, every statement in order, steps fingerprinted. */
-export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Promise<TraceStep[]> {
+export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null, keep?: KeepPolicy): Promise<{ steps: TraceStep[]; kept?: KeptRun }> {
   const instance = await DuckDBInstance.create(':memory:');
   const conn = await instance.connect();
+  const kept = keep ? keptRun(instance, conn) : undefined;
+  let keepN = 0;
+  let finished = false;
   const cwd = process.cwd();
   process.chdir(plan.root);
   const out: TraceStep[] = [];
@@ -147,7 +151,13 @@ export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Pr
       try {
         if (s.shape.kind === 'result') {
           // DuckDB-side hashing; statements that can't sit inside CREATE TABLE AS (DESCRIBE, SUMMARIZE) stream instead.
-          try { step.outputs.result = await fingerprintQueryInDuckDB(conn, s.statement.text); }
+          const keepAs = kept && keep && s.isStep ? `__dp_keep_${++keepN}` : undefined;
+          try {
+            const r = await fingerprintQueryInDuckDB(conn, s.statement.text,
+              keepAs ? { as: keepAs, when: (fp) => keep!(s.id, { result: fp }) } : undefined);
+            step.outputs.result = r.fp;
+            if (r.kept && keepAs) kept!.tables.set(s.id, keepAs);
+          }
           catch { step.outputs.result = await fingerprintQuery(conn, s.statement.text, true); }
         } else {
           await conn.run(s.statement.text);
@@ -164,17 +174,27 @@ export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Pr
         if (!s.isStep) throw new Error(`${s.file}:${s.line}: ${step.error}`);
       }
       step.duration_ms = Math.round(performance.now() - t0);
+      // --show-changed-rows: a snapshot, since a later statement may replace or change the table. Taken outside
+      // the timed, error-marking block: a failed copy only means the step isn't kept.
+      if (kept && keep && s.isStep && step.status === 'ok' && (s.shape.kind === 'relation' || s.shape.kind === 'mutation') && s.shape.target) {
+        if (s.shape.view) kept.views.add(s.id);
+        else if (keep(s.id, step.outputs)) {
+          const t = `__dp_keep_${++keepN}`;
+          try { await conn.run(`CREATE TEMP TABLE ${t} AS SELECT * FROM ${q(s.shape.target)}`); kept.tables.set(s.id, t); } catch { /* not kept */ }
+        }
+      }
       if (s.isStep) {
         latest.set(s.id, step.outputs);
         out.push(step);
       }
     }
+    finished = true;
   } finally {
     process.chdir(cwd);
-    conn.closeSync();
-    instance.closeSync();
+    // Kept runs stay open for the diff; a run that failed part way closes either way.
+    if (!kept || !finished) { kept?.close(); if (!kept) { conn.closeSync(); instance.closeSync(); } }
   }
-  return out;
+  return { steps: out, kept };
 }
 
 /** Error messages can quote data ("could not convert 'x'"), so traces keep only the error's kind. */

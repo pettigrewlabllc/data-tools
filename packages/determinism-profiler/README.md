@@ -62,6 +62,8 @@ A step is blamed only when its inputs were identical in every run and its output
 
 Notebooks need one extra trick. The cell that causes the trouble usually prints nothing (`sample = orders.sample(frac=0.5)`), so comparing cell output would blame a cell three steps later. The profiler runs a copy of your notebook with a hidden cell before and after each of yours that fingerprints the variables the cell reads and writes and the files it opens or saves. Your notebook isn't changed.
 
+**How it's different from nbval.** nbval reruns your notebook once against the outputs saved in it and fails on any cell that doesn't match. That's a good regression check, but every cell after the first change fails too, and the cell that caused it often printed nothing. This tool runs the whole thing several times and only blames a step when its inputs matched and its output still changed, so it points at the step that started it. The `--sanitize` format is nbval's, so a sanitize file you already have works here too.
+
 It also tells apart the kinds of change, because they don't all matter the same: same rows in a different order, a different row count, different values, or a change only in the last few digits of a decimal (adding numbers in a different order does that).
 
 ## Options
@@ -72,9 +74,22 @@ It also tells apart the kinds of change, because they don't all matter the same:
 | `--cells 2,4-6` | Notebook: just these cells, plus the cells they need and any setup cells (imports, seeds) |
 | `--select NAMES` | SQL: these files or tables and what they read from. dbt: passed to `dbt --select`, so `state:modified+` works; a bare model name means `+name` |
 | `--static-only` | Read the code for the usual causes and run nothing |
+| `--show-changed-rows` | SQL and dbt: for a step that changed and has a unique key column, print up to 10 key values whose rows differ. Terminal only, never in the report or traces |
+| `--sanitize FILE` | Notebook: more patterns to ignore in printed output, in nbval's format (`[name]`, then `regex:` and `replace:` lines) |
+| `--no-default-masks` | Notebook: compare printed timestamps, durations and progress bars too |
 | `--fail-on never` | Always exit 0 |
 | `--out DIR` | Where the report goes (default `./.determinism`) |
 | `--jupyter`, `--kernel`, `--dbt`, `--duckdb-path` | Point it at your tools when they aren't on your PATH |
+
+## Printed output that changes for no reason
+
+A log line with the time in it, "took 1.23s", a progress bar. None of that means your answer moved, so the profiler masks timestamps, durations and progress bars in a notebook's printed output before comparing it. It's never silent: every step says what it ignored ("Ignored in printed output: 1 timestamp."), and `--no-default-masks` turns it off.
+
+Masks only quiet a step whose inputs held still. If a cell is printing a column that moved upstream, it's compared on its raw output, so a real difference never gets masked away. Masks apply to printed output only, never to the variables a cell creates.
+
+## Which rows changed
+
+`--show-changed-rows` answers the next question for SQL and dbt: which rows? For each step that changed and has a column that's unique in every run, it checksums ranges of that key in both runs and keeps splitting the ranges that disagree (the approach from [reladiff](https://github.com/erezsh/reladiff)'s `hashdiff_tables`), so it finds a handful of changed rows among millions without comparing them one by one. It prints up to 10 key values per step to the terminal and nowhere else. A test plants a made-up value as a key and checks it shows up on screen and in no file. With no unique column, it says so and moves on.
 
 ## What it needs
 
@@ -101,12 +116,12 @@ A finding is **confirmed** when its step was the one that started a difference. 
 
 ## How well it works
 
-Fourteen fixtures in [`fixtures/determinism-profiler`](../../fixtures/determinism-profiler), each with the answer it should give. `npm run accuracy` runs them all three times and writes [`accuracy.json`](../../fixtures/determinism-profiler/accuracy.json); CI fails if the numbers change.
+Sixteen fixtures in [`fixtures/determinism-profiler`](../../fixtures/determinism-profiler), each with the answer it should give. `npm run accuracy` runs them all three times and writes [`accuracy.json`](../../fixtures/determinism-profiler/accuracy.json); CI fails if the numbers change.
 
 | | |
 |---|---|
-| Planted causes found and confirmed | 12 of 12 |
-| Fixtures where the blame landed on the right step | 14 of 14 |
+| Planted causes found and confirmed | 15 of 15 |
+| Fixtures where the blame landed on the right step | 16 of 16 |
 | Causes reported on the clean fixtures | 0 |
 
 Fixtures only prove it finds what I planted, so it also runs against real public data, written the way people actually write analyses ([`real/`](../../fixtures/determinism-profiler/real), `npm run accuracy:real`):

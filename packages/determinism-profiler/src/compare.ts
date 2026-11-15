@@ -19,6 +19,9 @@ export function outputVerdict(fps: (Fingerprint | undefined)[]): { verdict: Verd
 }
 
 /** Input ids look like "<step_id>#<output>"; the producing step is the part before '#'. */
+/** The unmasked printed output, kept beside the masked one (see compareRuns). */
+export const RAW = 'display (unmasked)';
+
 export const producerOf = (inputId: string) => inputId.split('#')[0];
 
 export function compareRuns(traces: Trace[], findings: Finding[]): Pick<Report, 'steps' | 'sources' | 'score' | 'findings'> {
@@ -28,7 +31,13 @@ export function compareRuns(traces: Trace[], findings: Finding[]): Pick<Report, 
 
   for (const s0 of first.steps) {
     const runs = byId.map((m) => m.get(s0.step_id)).filter((s): s is TraceStep => !!s);
-    const outputNames = [...new Set(runs.flatMap((r) => Object.keys(r.outputs)))];
+    const inputIds = [...new Set(runs.flatMap((r) => Object.keys(r.input_hashes)))];
+    const changed = inputIds.filter((id) => !runs.every((r) => r.input_hashes[id] === runs[0].input_hashes[id]));
+    // Masks only quiet a step whose inputs held still. A step fed a moving input is compared on its raw
+    // printed output, so a real difference arriving from upstream (a timestamp column) is never masked away.
+    const rawDisplay = changed.length > 0 && runs.some((r) => RAW in r.outputs);
+    const outputOf = (r: TraceStep, name: string) => (name === 'display' && rawDisplay ? r.outputs[RAW] ?? r.outputs.display : r.outputs[name]);
+    const outputNames = [...new Set(runs.flatMap((r) => Object.keys(r.outputs)))].filter((n) => n !== RAW);
     // Failing in some runs but not others (or failing differently) is itself a difference.
     const errs = runs.map((r) => (r.status === 'error' ? r.error ?? 'error' : ''));
     let verdict: Verdict = errs.every((e) => e === errs[0]) ? 'same' : 'error';
@@ -36,15 +45,13 @@ export function compareRuns(traces: Trace[], findings: Finding[]): Pick<Report, 
     if (verdict !== 'error') {
       let anyHashable = outputNames.length === 0;
       for (const name of outputNames) {
-        const v = outputVerdict(runs.map((r) => r.outputs[name]));
+        const v = outputVerdict(runs.map((r) => outputOf(r, name)));
         if (v.verdict !== 'skipped') anyHashable = true;
         if (v.verdict !== 'same' && v.verdict !== 'skipped') moved.push({ output: name, ...v });
         verdict = worst(verdict, v.verdict);
       }
       if (!anyHashable) verdict = 'skipped';
     }
-    const inputIds = [...new Set(runs.flatMap((r) => Object.keys(r.input_hashes)))];
-    const changed = inputIds.filter((id) => !runs.every((r) => r.input_hashes[id] === runs[0].input_hashes[id]));
 
     let attribution: StepResult['attribution'] = 'none';
     const from = new Set<string>();
@@ -79,9 +86,10 @@ export function compareRuns(traces: Trace[], findings: Finding[]): Pick<Report, 
       moved,
       from: [...from],
       changed_inputs: changed,
-      rows: runs.map((r) => Math.max(0, ...Object.values(r.outputs).filter((f) => !f.skipped).map((f) => f.rows))),
+      rows: runs.map((r) => Math.max(0, ...Object.entries(r.outputs).filter(([k, f]) => k !== RAW && !f.skipped).map(([, f]) => f.rows))),
       findings: [],
       duration_ms: runs.map((r) => r.duration_ms),
+      ...(rawDisplay ? {} : maskCounts(runs)),
     });
   }
 
@@ -131,4 +139,10 @@ export function compareRuns(traces: Trace[], findings: Finding[]): Pick<Report, 
     findings: out.filter((f) => kept.has(f)),
     score: { same, scored: scored.length, percent: scored.length ? Math.round((1000 * same) / scored.length) / 10 : 100 },
   };
+}
+
+function maskCounts(runs: TraceStep[]): { masked?: Record<string, number> } {
+  const m: Record<string, number> = {};
+  for (const r of runs) for (const [k, n] of Object.entries(r.masked ?? {})) m[k] = Math.max(m[k] ?? 0, n);
+  return Object.keys(m).length ? { masked: m } : {};
 }

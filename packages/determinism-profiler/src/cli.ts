@@ -2,7 +2,7 @@
 import { parseArgs } from 'node:util';
 import { relative, resolve } from 'node:path';
 import { EnvError, profile, writeOutputs } from './profile.js';
-import { renderTerminal } from './report/terminal.js';
+import { renderChangedRows, renderTerminal } from './report/terminal.js';
 import { VERSION } from './version.js';
 
 const HELP = `determinism-profiler ${VERSION}
@@ -18,10 +18,15 @@ Options:
   --select NAMES     SQL: these files or tables and what they read from
                      dbt: passed to dbt --select (a bare model name means +name)
   --static-only      just read the code, don't run anything
+  --show-changed-rows SQL and dbt: for a changed step with a unique key, print up to 10
+                     key values that differ (here only, never in the report or traces)
   --out DIR          where to write the report and traces (default ./.determinism)
   --fail-on WHEN     differs (default) or never: when to exit 1
   --jupyter PATH     the jupyter to use (default: the one on your PATH)
   --kernel NAME      the notebook kernel to use (default: the notebook's own)
+  --sanitize FILE    notebook: more patterns to ignore in printed output (nbval's format:
+                     [name], then regex: and replace: lines)
+  --no-default-masks notebook: compare printed timestamps, durations and progress bars too
   --dbt PATH         the dbt to use (default: the one on your PATH)
   --duckdb-path PATH dbt: the DuckDB file, if profiles.yml can't say
   --quiet            don't print the report
@@ -37,8 +42,8 @@ async function main(): Promise<number> {
       allowPositionals: true,
       options: {
         runs: { type: 'string' }, cells: { type: 'string' }, select: { type: 'string', multiple: true },
-        'static-only': { type: 'boolean' }, out: { type: 'string' }, 'fail-on': { type: 'string' },
-        jupyter: { type: 'string' }, kernel: { type: 'string' }, dbt: { type: 'string' }, 'duckdb-path': { type: 'string' },
+        'static-only': { type: 'boolean' }, 'show-changed-rows': { type: 'boolean' }, out: { type: 'string' }, 'fail-on': { type: 'string' },
+        jupyter: { type: 'string' }, kernel: { type: 'string' }, sanitize: { type: 'string' }, 'no-default-masks': { type: 'boolean' }, dbt: { type: 'string' }, 'duckdb-path': { type: 'string' },
         quiet: { type: 'boolean' }, help: { type: 'boolean', short: 'h' }, version: { type: 'boolean' },
       },
     });
@@ -56,8 +61,8 @@ async function main(): Promise<number> {
   const select = v.select?.flatMap((s) => s.split(',')).map((s) => s.trim()).filter(Boolean);
   const tty = process.stderr.isTTY;
   try {
-    const { report, traces } = await profile(args.positionals[0], {
-      runs, cells: v.cells, select, staticOnly: v['static-only'], jupyter: v.jupyter, kernel: v.kernel, dbt: v.dbt, duckdbPath: v['duckdb-path'],
+    const { report, traces, changedRows } = await profile(args.positionals[0], {
+      runs, cells: v.cells, select, staticOnly: v['static-only'], jupyter: v.jupyter, kernel: v.kernel, sanitize: v.sanitize, defaultMasks: !v['no-default-masks'], showChangedRows: v['show-changed-rows'], dbt: v.dbt, duckdbPath: v['duckdb-path'],
       onRun: (i, n) => { if (tty && !v.quiet) process.stderr.write(`\rRunning ${i} of ${n}…`); },
     });
     if (tty && !v.quiet) process.stderr.write('\r\u001b[K');
@@ -65,6 +70,7 @@ async function main(): Promise<number> {
     writeOutputs(out, report, traces);
     if (!v.quiet) {
       process.stdout.write(renderTerminal(report, process.stdout.isTTY));
+      if (changedRows) process.stdout.write(renderChangedRows(changedRows, process.stdout.isTTY));
       process.stdout.write(`Report: ${relative(process.cwd(), out) || '.'}/report.html (also report.md and report.json)\n`);
     }
     const differs = report.steps.some((s) => !s.judgment && s.verdict !== 'same' && s.verdict !== 'skipped');

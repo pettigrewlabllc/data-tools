@@ -6,6 +6,7 @@ import { delimiter, join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { bytesFingerprint, identity, type Fingerprint } from '../fingerprint.js';
 import { fingerprintInDuckDB } from '../fingerprint-sql.js';
+import { keptRun, type KeepPolicy, type KeptRun } from '../changed-rows.js';
 import { checkStatement, splitStatements } from '../static/sql.js';
 import type { Finding, StepKind, TraceStep } from '../types.js';
 import { EnvError } from './notebook.js';
@@ -128,7 +129,7 @@ async function fingerprintRelation(conn: Awaited<ReturnType<DuckDBInstance['conn
 }
 
 /** One run: dbt build --full-refresh, then fingerprint every built relation and every source. */
-export async function runDbtOnce(plan: DbtPlan, run: number): Promise<{ steps: TraceStep[]; notes: string[] }> {
+export async function runDbtOnce(plan: DbtPlan, run: number, keep?: KeepPolicy): Promise<{ steps: TraceStep[]; notes: string[]; kept?: KeptRun }> {
   const tmp = mkdtempSync(join(tmpdir(), 'determinism-profiler-dbt-'));
   try {
     const target = join(tmp, `run-${run}`);
@@ -196,9 +197,37 @@ export async function runDbtOnce(plan: DbtPlan, run: number): Promise<{ steps: T
       instance.closeSync();
     }
     // Tests: recorded as notes, not steps.
+    // --show-changed-rows: dbt overwrites the file next run, so copy this run's tables into memory now.
+    let kept: KeptRun | undefined;
+    if (keep) {
+      const mem = await DuckDBInstance.create(':memory:');
+      const mc = await mem.connect();
+      kept = keptRun(mem, mc);
+      let attached = false;
+      try {
+        await mc.run(`ATTACH '${plan.dbPath.replaceAll("'", "''")}' AS dp_src (READ_ONLY)`);
+        attached = true;
+        let k = 0;
+        for (const st of steps) {
+          if (st.kind === 'source' || st.status !== 'ok') continue;
+          const n = manifest.nodes[st.step_id];
+          if (!n) continue;
+          if (n.config?.materialized === 'view') { kept.views.add(st.step_id); continue; }
+          if (!keep(st.step_id, st.outputs)) continue;
+          const t = `__dp_keep_${++k}`;
+          try {
+            await mc.run(`CREATE TABLE ${t} AS SELECT * FROM dp_src.${q(n.schema)}.${q(n.alias ?? n.name)}`);
+            kept.tables.set(st.step_id, t);
+          } catch { /* not readable: reported as not kept */ }
+        }
+      } catch { /* couldn't attach: every step reports "not kept", the run itself goes on */ }
+      finally {
+        if (attached) await mc.run('DETACH dp_src').catch(() => {});
+      }
+    }
     const failed = results.results.filter((x) => x.unique_id.startsWith('test.') && x.status !== 'pass').length;
     if (failed) notes.push(`${failed} dbt test${failed === 1 ? '' : 's'} didn't pass in run ${run}.`);
-    return { steps, notes };
+    return { steps, notes, kept };
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

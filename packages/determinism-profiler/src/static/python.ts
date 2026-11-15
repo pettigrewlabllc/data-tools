@@ -11,7 +11,7 @@ interface Rule {
 const hasSeedArg = (call: string) => /\brandom_state\s*=\s*(?!None\b)/.test(call) || /\bseed\s*=\s*(?!None\b)/.test(call);
 
 const RULES: Rule[] = [
-  { cause: 'timestamp', kind: 'definite', re: /\b(?:datetime\.)?(?:datetime|date)\.(?:now|today|utcnow)\s*\(|\btime\.time\s*\(|\b(?:pd\.)?Timestamp\.(?:now|today|utcnow)\s*\(|\bTimestamp\(\s*['"](?:now|today)['"]|\bpd\.to_datetime\(\s*['"](?:now|today)['"]/ },
+  { cause: 'timestamp', kind: 'definite', re: /\b(?:datetime\.)?(?:datetime|date)\.(?:now|today|utcnow)\s*\(|\btime\.(?:time|time_ns|perf_counter|monotonic)\s*\(|\b(?:pd\.)?Timestamp\.(?:now|today|utcnow)\s*\(|\bTimestamp\(\s*['"](?:now|today)['"]|\bpd\.to_datetime\(\s*['"](?:now|today)['"]/ },
   { cause: 'random', kind: 'definite', re: /\b(?:np|numpy)\.random\.(?:rand|randn|randint|random|random_sample|choice|shuffle|permutation|normal|uniform|binomial|poisson|exponential|beta|gamma|integers)\s*\(/, keep: (_c, x) => !x.seeded },
   { cause: 'random', kind: 'definite', re: /(?<![\w.])random\.(?:random|randint|randrange|choice|choices|shuffle|sample|uniform|gauss)\s*\(/, keep: (_c, x) => !x.seeded },
   { cause: 'random', kind: 'definite', re: /\bdefault_rng\s*\(\s*\)/ },
@@ -41,13 +41,33 @@ function callText(src: string, start: number): string {
   return src.slice(start);
 }
 
-/** Blank out comments and string contents so patterns don't match inside them, keeping offsets. */
+/**
+ * Blank out comments and string contents so patterns don't match inside them, keeping offsets.
+ * f-strings keep their {expressions}: f"{datetime.now()}" is code, not text.
+ */
 function codeOnly(src: string): string {
-  return src.replace(/("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|#[^\n]*)/g, (m) => {
-    if (m.startsWith('#')) return ' '.repeat(m.length);
-    // keep quotes and the strings 'now'/'today' (Timestamp('now')), blank the rest
-    if (/^['"](now|today)['"]$/.test(m)) return m;
-    return m[0] + m.slice(1, -1).replace(/[^\n]/g, ' ') + m[m.length - 1];
+  return src.replace(/([rRbBuUfF]{0,2})("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|#[^\n]*)/g, (m, prefix: string, body: string) => {
+    if (body.startsWith('#')) return ' '.repeat(m.length);
+    // keep the strings 'now'/'today' (Timestamp('now')), blank the rest
+    if (/^['"](now|today)['"]$/.test(body)) return m;
+    const q = body.startsWith('"""') || body.startsWith("'''") ? 3 : 1;
+    const inner = body.slice(q, -q);
+    let kept: string;
+    if (/f/i.test(prefix)) {
+      // Left to right: {{ and }} are literal braces, any other { opens an expression (nested {} inside it
+      // count too). Code inside expressions is kept, everything else blanked; lengths never change.
+      const out: string[] = [];
+      let depth = 0;
+      for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (depth === 0 && (ch === '{' || ch === '}') && inner[i + 1] === ch) { out.push('  '); i++; continue; }
+        if (ch === '{') { depth++; out.push(ch); continue; }
+        if (ch === '}' && depth > 0) { depth--; out.push(ch); continue; }
+        out.push(depth > 0 || ch === '\n' ? ch : ' ');
+      }
+      kept = out.join('');
+    } else kept = inner.replace(/[^\n]/g, ' ');
+    return prefix + body.slice(0, q) + kept + body.slice(-q);
   });
 }
 
