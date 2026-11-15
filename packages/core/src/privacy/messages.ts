@@ -1,6 +1,6 @@
 /**
  * Every finding, option, reason and rule sentence the engine produces lives here, so the wording can be reviewed
- * and rewritten in one place. These are placeholders until the copy pass.
+ * and rewritten in one place. Copy pass done 2026-11-14, awaiting Joel's sign-off.
  */
 import type { FindingClass } from './check';
 
@@ -69,7 +69,7 @@ export const CLASS_HELP: Record<FindingClass, string> = {
   disclosed: 'The notice names it.',
   vague: 'The notice only covers it through a broader or hedged line.',
   not_disclosed: 'No sentence in the notice covers it.',
-  contradicted: 'The notice says the opposite, or lists only a weaker version.',
+  contradicted: "The notice says it doesn't collect it, or lists only a weaker version.",
 };
 
 export const PURPOSE_LABEL: Record<string, string> = {
@@ -104,7 +104,7 @@ export const M = {
   reasonDecimals: (n: number, precise: boolean) => (precise ? `Values carry ${n} decimal places, which is street-level precision.` : `Values carry ${n} decimal places, which is rounded to a neighbourhood or wider.`),
   reasonBirthDates: () => 'The values are dates spread across several decades, like birth dates.',
   reasonType: (type: string) => `The column type is ${type}.`,
-  reasonModifier: () => 'The name has a word like "opt", "count" or "status" next to it, so it may describe the data rather than hold it.',
+  reasonModifier: () => `There's a word like "opt", "count" or "status" in the name, so it may describe the data rather than hold it.`,
   noReason: 'No sign that this holds personal information.',
   needsConfirming: 'Needs confirming',
   confident: 'Confident',
@@ -152,7 +152,7 @@ export const M = {
   aiRejectedCategory: (cat: string) => `A model line was dropped because "${cat}" is not a category this tool knows.`,
 
   // errors
-  notAPolicy: 'This is not a policy.yml written by this tool.',
+  notAPolicy: "This isn't a policy.yml from PrivacyDiff.",
 } as const;
 
 /** The text a rule contributes to the page is in rules.yml. This is how the engine words a hit. */

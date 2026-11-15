@@ -1,19 +1,19 @@
-/** Every word the page shows lives here. Placeholders until the copy pass. */
+/** Every word the page shows lives here. Copy pass done 2026-11-14, awaiting Joel's sign-off. */
 import type { FindingClass, Status } from '@data-tools/core';
 
 export const C = {
   title: 'PrivacyDiff',
-  lede: 'Paste your privacy notice. Add your data, or just its table definitions. PrivacyDiff compares the two and tells you which kinds of personal information the data holds that the notice does not cover.',
-  stance: 'It quotes your notice and cites the rule a finding relates to. It does not give a verdict. That call is yours.',
-  privacy: 'Your files stay in this browser. Nothing is uploaded. The optional model helper is off, and if you turn it on it only ever sends the notice text.',
+  lede: "Paste your privacy notice, then add your data or just its table definitions. You get back the personal information your data holds that the notice doesn't mention.",
+  stance: "Every finding quotes your notice and names the rule it relates to. It won't tell you whether you're meeting the law. That call is yours, and your counsel's.",
+  privacy: 'Your files stay in this browser. Nothing gets uploaded. The model helper is off, and if you turn it on, all it ever sends is the notice text.',
 
   sampleButton: 'Try the sample',
-  sampleNote: 'A made-up notice and three tables with planted mismatches.',
+  sampleNote: 'A made-up notice and three tables with a few mismatches planted in them.',
   startOver: 'Start over',
 
   // step 1
   step1: '1. Your privacy notice',
-  step1Help: 'Paste the text. PrivacyDiff drafts a policy.yml from it. You check every line before anything is compared.',
+  step1Help: 'Paste the text and PrivacyDiff drafts a policy.yml from it. You check every line before anything gets compared.',
   noticeLabel: 'Notice text',
   noticePlaceholder: 'Paste your privacy notice here.',
   draftButton: 'Draft the policy',
@@ -21,10 +21,10 @@ export const C = {
   importHelp: 'Fides system or dataset YAML, or a DPV JSON-LD file.',
   openPolicyButton: 'Open a policy.yml',
   tickSummary: 'Or tick the categories you disclose',
-  tickHelp: 'For when you have no notice text handy. Ticked categories count as disclosed, with no sentence behind them.',
+  tickHelp: 'No notice text handy? Tick what you disclose. Ticked categories count as disclosed, with no sentence behind them.',
   tickApply: 'Use the ticked categories',
   draftHeading: 'Draft policy',
-  draftEmpty: 'No categories found in the text. Tick some below, or edit the notice and draft again.',
+  draftEmpty: "Didn't find any categories in that text. Tick some below, or edit the notice and draft again.",
   draftHelp: 'Each line shows the sentence it came from. Change the status, remove a line, or add one.',
   colCategory: 'Category',
   colStatus: 'Status',
@@ -39,7 +39,7 @@ export const C = {
   sensitiveHeading: 'Sensitive categories disclosed',
   none: 'None',
   confirmPolicy: 'Confirm this policy',
-  confirmedPolicy: 'Policy confirmed. Changing a line will ask you to confirm again.',
+  confirmedPolicy: "Policy confirmed. If you change a line, you'll confirm it again.",
   needConfirm: 'Nothing is compared until you confirm the policy.',
   downloadPolicy: 'Download policy.yml',
   unrecognised: (ids: string[]) => `These ids in the file are not in this taxonomy and were skipped: ${ids.join(', ')}.`,
@@ -48,7 +48,7 @@ export const C = {
 
   // ai
   aiHeading: 'Draft the policy with a model (optional)',
-  aiHelp: 'Off until you turn it on. The model only sees the notice text, never your data. Every line it returns is checked: the category must exist and its quote must be in your notice, or the line is dropped. You still confirm each line.',
+  aiHelp: 'Off until you turn it on. The model only sees the notice text, never your data. Every line it sends back gets checked: the category has to exist and the quote has to be in your notice, or the line is dropped. You still confirm each one.',
   aiEnable: 'Let me draft with a model',
   aiProvider: 'Provider',
   aiAnthropic: 'Anthropic (your API key)',
@@ -58,7 +58,7 @@ export const C = {
   aiKey: 'API key',
   aiKeyNote: "Your key stays in this tab's memory. It is never saved.",
   aiPayloadHeading: 'What would be sent',
-  aiPayloadHelp: 'This is the notice text, exactly as it would leave this page, and nothing else from you.',
+  aiPayloadHelp: 'This is the notice text exactly as it would leave this page. Nothing else of yours goes with it.',
   aiRequestSummary: 'The full request',
   aiRun: 'Draft with the model',
   aiRunning: 'Waiting for the model...',
@@ -67,7 +67,7 @@ export const C = {
 
   // step 2
   step2: '2. Your data',
-  step2Help: 'Drop CSV, Excel, Parquet or JSON files, or paste CREATE TABLE statements. Table definitions are enough for the category findings. Uniqueness needs the data.',
+  step2Help: 'Drop CSV, Excel, Parquet or JSON files, or paste CREATE TABLE statements. Table definitions are enough to find the categories. Checking uniqueness needs the rows themselves.',
   addFiles: 'Add files',
   ddlLabel: 'Or paste table definitions',
   ddlPlaceholder: 'CREATE TABLE events (user_id BIGINT, lat DOUBLE, ...);',
@@ -101,7 +101,7 @@ export const C = {
   classLabel: (c: FindingClass) => ({ disclosed: 'Disclosed', vague: 'Disclosed only vaguely', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' }[c]),
   classCount: (n: number) => `${n}`,
   provisionalHeading: 'Needs confirming first',
-  provisionalHelp: 'These columns have a low-confidence category. They are not counted until you confirm them in step 2.',
+  provisionalHelp: "PrivacyDiff isn't sure what these columns are. They don't count until you confirm them in step 2.",
   noFindings: 'No personal-information columns confirmed yet.',
   openFinding: 'See the rule and the options',
   closeFinding: 'Close',
@@ -118,7 +118,7 @@ export const C = {
 
   // step 4
   step4: '4. Combine tables',
-  step4Help: 'Pick the tables that would be joined. PrivacyDiff shows what the combination brings together and whether any set of columns narrows to one row.',
+  step4Help: "Pick the tables you'd join. You'll see what the combination brings together, and whether any set of columns narrows things down to one row.",
   pickTables: 'Tables to combine',
   keyHeading: 'How they link',
   keyFor: (t: string, base: string) => `${t} links to ${base} on`,
@@ -136,19 +136,19 @@ export const C = {
   uniqueEntityRows: 'row',
   qiHeading: 'Columns counted (quasi-identifiers you confirmed)',
   qiNone: 'No quasi-identifier columns are confirmed yet.',
-  directSkipped: 'Direct identifiers are left out: on their own they would make everyone unique.',
+  directSkipped: 'Direct identifiers are left out. On their own they make everyone unique, which tells you nothing.',
   subsetsHeading: 'Smallest column sets that make at least half of them unique',
   subsetsNone: 'No set of up to 3 columns makes half of them unique.',
   subsetsCols: 'Columns',
   subsetsShare: 'Share unique',
   working: 'Working...',
-  uniqueNote: 'This counts the rows in your file. It says nothing about the wider population.',
+  uniqueNote: 'This counts rows in your file. It says nothing about the wider population.',
 
   // step 5 / export
   step5: '5. Take it with you',
   downloadYaml: 'Download policy.yml',
   exportNeedsPolicy: 'Confirm the policy to download it.',
 
-  footer: 'Free and open source (MIT). Made by Pettigrew Lab. Every number on this page comes from SQL run by DuckDB, in your browser.',
+  footer: 'Free and open source (MIT). Made by Pettigrew Lab. Every number on this page comes from SQL that DuckDB runs in your browser.',
   repoLink: 'The code is on GitHub',
 };
