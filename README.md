@@ -75,6 +75,25 @@ What the receipts say on these files is the better test:
 
 Twenty pairs, all U.S. government geography, is still a narrow set. It's the number to quote, with that said next to it.
 
+### On a public benchmark (Valentine)
+
+`npm run accuracy:valentine` runs 154 pairs from the Valentine schema-matching benchmark (ICDE 2021): every Joinable pair from ChEMBL, Canadian open data and TPC-DI (48 each), plus the 10 NYC Open Data pairs in the Valentine repo. It downloads about 600 MB once into `~/.cache/data-tools/valentine` and never commits any of it. Licences are in [fixtures/join-receipt/valentine/SOURCES.md](fixtures/join-receipt/valentine/SOURCES.md).
+
+Read this number apart from the 20-pair real set, because it's an easier test. Valentine makes each pair by splitting one table in two, so the key always matches value for value. Nothing has lost a leading zero, and nothing has codes on one side and names on the other. What it does test is column names that have been mangled (`assay_id` against `assays_ASI`), partial overlap, and tables with a lot of columns.
+
+The expected keys came from Valentine's own ground truth, by a rule written down before the engine ran (in `label.ts`). The key is a matched column that identifies a row in the first table. When no matched column does (every OpenData pair and 6 of the NYC pairs), any matched column counts, so those labels are lenient.
+
+| | First run | Now |
+|---|---|---|
+| Proposed with confidence, and right | 37 of 154 | 76 of 154 |
+| Best guess right, confident or not | 113 of 154 | 113 of 154 |
+
+The first run is kept in `valentine/first-run-2026-11-14.json`. Three things explain the misses:
+
+- **Held back on a right key (39 pairs, fixed).** Half the rows overlap by design, and the engine wanted 60% of keys found before it would propose one. A key that's unique on one side is a lookup, and a lookup often covers only part of the other file, so it now counts from 30% found, with at least 20 values matching. TPC-DI went from 24 to 48 of 48, and ChEMBL from 13 to 26. The synthetic set and the real set didn't move.
+- **No real key to find (OpenData, 0 of 48).** The shared column is Fiscal year, which repeats on both sides, so joining on it multiplies rows. The engine says it can't find a key it trusts. I think that's the right answer, and the lenient label scores it as a miss.
+- **IDs renamed past recognition (22 ChEMBL pairs, open).** `assay_id` runs 1, 2, 3 on both sides. Once the target column is renamed to something like `ASI`, nothing says it's an ID, so it's read as a plain number and never tried as a key.
+
 ## How big a file
 
 Measured on a MacBook, from drop to receipt:
