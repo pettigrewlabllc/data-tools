@@ -20,7 +20,12 @@ jobs:
       - run: git diff --exit-code fixtures/join-receipt/accuracy.json
       - run: npm run accuracy:real
       - run: git diff --exit-code fixtures/join-receipt/accuracy-real.json
+      - run: npm run accuracy:privacydiff
+      - run: git diff --exit-code fixtures/privacydiff/accuracy.json
+      - run: node scripts/gen-privacy-rules.mjs
+      - run: git diff --exit-code packages/core/src/privacy/rules.data.ts
       - run: npm run build -w join-receipt
+      - run: npm run build -w privacydiff
       - run: npx playwright install --with-deps chromium webkit firefox
       - run: npx playwright test
       - if: failure()

@@ -1,5 +1,5 @@
 import { PROMPT } from './prompt';
-import type { Payload } from './payload';
+
 
 export interface ModelConfig {
   kind: 'anthropic' | 'openai-compatible';
@@ -16,14 +16,14 @@ export const DEFAULTS: Record<ModelConfig['kind'], { endpoint: string; model: st
 };
 
 /** The exact HTTP request a call would make, so the payload panel can show it (key redacted). */
-export function buildRequest(cfg: ModelConfig, payload: Payload): { url: string; headers: Record<string, string>; body: unknown } {
+export function buildRequest(cfg: ModelConfig, payload: unknown, system: string = PROMPT): { url: string; headers: Record<string, string>; body: unknown } {
   const user = JSON.stringify(payload);
   const base = cfg.endpoint.replace(/\/+$/, '');
   if (cfg.kind === 'anthropic') {
     return {
       url: `${base}/v1/messages`,
       headers: { 'content-type': 'application/json', 'x-api-key': cfg.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: { model: cfg.model, max_tokens: 1024, system: PROMPT, messages: [{ role: 'user', content: user }] },
+      body: { model: cfg.model, max_tokens: 1024, system, messages: [{ role: 'user', content: user }] },
     };
   }
   const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -31,7 +31,7 @@ export function buildRequest(cfg: ModelConfig, payload: Payload): { url: string;
   return {
     url: `${base}/chat/completions`,
     headers,
-    body: { model: cfg.model, max_tokens: 1024, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: PROMPT }, { role: 'user', content: user }] },
+    body: { model: cfg.model, max_tokens: 1024, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] },
   };
 }
 
@@ -56,8 +56,8 @@ export function extractJson(text: string): unknown {
   throw new Error('the model returned incomplete JSON');
 }
 
-export async function callModel(cfg: ModelConfig, payload: Payload, f: Fetcher = (u, i) => fetch(u, i)): Promise<unknown> {
-  const req = buildRequest(cfg, payload);
+export async function callModel(cfg: ModelConfig, payload: unknown, f: Fetcher = (u, i) => fetch(u, i), system: string = PROMPT): Promise<unknown> {
+  const req = buildRequest(cfg, payload, system);
   const res = await f(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) });
   const text = await res.text();
   if (!res.ok) {

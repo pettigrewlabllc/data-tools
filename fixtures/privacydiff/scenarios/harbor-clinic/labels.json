@@ -1,0 +1,50 @@
+{
+  "patients.patient_id": {
+    "category": "user.health_and_medical.record_number",
+    "cls": "vague"
+  },
+  "patients.name": {
+    "category": "user.name",
+    "cls": "disclosed"
+  },
+  "patients.dob": {
+    "category": "user.demographic.date_of_birth",
+    "cls": "not_disclosed"
+  },
+  "patients.email": {
+    "category": "user.contact.email",
+    "cls": "vague"
+  },
+  "patients.phone": {
+    "category": "user.contact.phone_number",
+    "cls": "vague"
+  },
+  "patients.ssn": {
+    "category": "user.government_id.national_identification_number",
+    "cls": "contradicted"
+  },
+  "patients.insurance_id": {
+    "category": "user.health_and_medical.insurance_id",
+    "cls": "disclosed"
+  },
+  "patients.zip_code": {
+    "category": "user.contact.address.postal_code",
+    "cls": "vague"
+  },
+  "visits.patient_id": {
+    "category": "user.health_and_medical.record_number",
+    "cls": "vague"
+  },
+  "visits.diagnosis": {
+    "category": "user.health_and_medical",
+    "cls": "disclosed"
+  },
+  "visits.medications": {
+    "category": "user.health_and_medical",
+    "cls": "disclosed"
+  },
+  "visits.treatment_plan": {
+    "category": "user.health_and_medical",
+    "cls": "disclosed"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "classification": {
+    "namesOnly": {
+      "columns": 354,
+      "personalColumns": 244,
+      "directIdentifierColumns": 137,
+      "directIdentifierRecall": 0.964,
+      "directIdentifierRecallConfident": 0.964,
+      "allPersonalRecall": 0.959,
+      "proposalPrecision": 0.996,
+      "notPersonalColumns": 110,
+      "notPersonalFlagged": 0,
+      "misses": [
+        "applicants.f7: expected user.government_id.national_identification_number, got none (0)",
+        "customers.c1: expected user.contact.email, got none (0)",
+        "customers.f12: expected user.contact.phone_number, got none (0)",
+        "customers.z: expected user.contact.address.postal_code, got none (0)",
+        "events.lat_2: expected user.location.imprecise, got user.location.precise (0.86)",
+        "events.x1: expected user.location.precise, got none (0)",
+        "events.y1: expected user.location.precise, got none (0)",
+        "logs.src: expected user.device.ip_address, got none (0)",
+        "payments.f3: expected user.financial, got none (0)",
+        "users.d3: expected user.demographic.date_of_birth, got none (0)"
+      ]
+    },
+    "withValues": {
+      "columns": 354,
+      "personalColumns": 244,
+      "directIdentifierColumns": 137,
+      "directIdentifierRecall": 1,
+      "directIdentifierRecallConfident": 1,
+      "allPersonalRecall": 0.992,
+      "proposalPrecision": 1,
+      "notPersonalColumns": 110,
+      "notPersonalFlagged": 0,
+      "misses": [
+        "events.x1: expected user.location.precise, got none (0)",
+        "events.y1: expected user.location.precise, got none (0)"
+      ]
+    }
+  },
+  "collection": {
+    "scenarios": 6,
+    "labelledColumns": 80,
+    "correctClass": 1,
+    "notDisclosedPrecision": 1,
+    "notDisclosedRecall": 1,
+    "notDisclosedReported": 20,
+    "notDisclosedCorrect": 20,
+    "provisionalSkipped": 0,
+    "confusion": {
+      "disclosed": {
+        "disclosed": 36,
+        "vague": 0,
+        "not_disclosed": 0,
+        "contradicted": 0
+      },
+      "vague": {
+        "disclosed": 0,
+        "vague": 17,
+        "not_disclosed": 0,
+        "contradicted": 0
+      },
+      "not_disclosed": {
+        "disclosed": 0,
+        "vague": 0,
+        "not_disclosed": 20,
+        "contradicted": 0
+      },
+      "contradicted": {
+        "disclosed": 0,
+        "vague": 0,
+        "not_disclosed": 0,
+        "contradicted": 7
+      }
+    },
+    "misses": []
+  },
+  "targets": {
+    "directIdentifierRecall": 0.9,
+    "notDisclosedPrecision": 0.9
+  }
+}

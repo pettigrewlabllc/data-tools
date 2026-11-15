@@ -1,0 +1,19 @@
+{
+  "employees.employee_id": { "category": "user.unique_id", "cls": "disclosed" },
+  "employees.first_name": { "category": "user.name", "cls": "disclosed" },
+  "employees.last_name": { "category": "user.name", "cls": "disclosed" },
+  "employees.home_address": { "category": "user.contact.address.street", "cls": "disclosed" },
+  "employees.phone": { "category": "user.contact.phone_number", "cls": "disclosed" },
+  "employees.work_email": { "category": "user.contact.email", "cls": "disclosed" },
+  "employees.ssn": { "category": "user.government_id.national_identification_number", "cls": "disclosed" },
+  "employees.bank_account": { "category": "user.financial.bank_account", "cls": "disclosed" },
+  "employees.salary": { "category": "user.workplace", "cls": "disclosed" },
+  "employees.job_title": { "category": "user.workplace", "cls": "disclosed" },
+  "hr_records.employee_id": { "category": "user.unique_id", "cls": "disclosed" },
+  "hr_records.date_of_birth": { "category": "user.demographic.date_of_birth", "cls": "disclosed" },
+  "hr_records.passport_number": { "category": "user.government_id.passport_number", "cls": "not_disclosed" },
+  "hr_records.union_member": { "category": "user.union_membership", "cls": "not_disclosed" },
+  "hr_records.disability_status": { "category": "user.health_and_medical", "cls": "not_disclosed" },
+  "hr_records.ethnicity": { "category": "user.demographic.race_ethnicity", "cls": "not_disclosed" },
+  "hr_records.emergency_contact_phone": { "category": "user.contact.phone_number", "cls": "disclosed" }
+}

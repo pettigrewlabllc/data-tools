@@ -1,0 +1,9 @@
+{
+  "families.parent_email": { "category": "user.contact.email", "cls": "disclosed" },
+  "learners.child_first_name": { "category": "user.name", "cls": "disclosed" },
+  "learners.child_dob": { "category": "user.childrens", "cls": "contradicted" },
+  "learners.is_under_13": { "category": "user.childrens", "cls": "contradicted" },
+  "sessions.device_id": { "category": "user.device.device_id", "cls": "not_disclosed" },
+  "sessions.cookie_id": { "category": "user.device.cookie_id", "cls": "contradicted" },
+  "sessions.ip_address": { "category": "user.device.ip_address", "cls": "not_disclosed" }
+}
