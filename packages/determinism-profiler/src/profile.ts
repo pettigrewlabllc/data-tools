@@ -10,8 +10,8 @@ import type { Finding, InputKind, Report, Trace, TraceStep } from './types.js';
 import { VERSION } from './version.js';
 import { ADDRESS_MASK, DEFAULT_MASKS, loadSanitize, type Mask } from './masks.js';
 import { MASK_NOTE } from './report/words.js';
-import { changedRows, type ChangedRowsResult, type KeptRun } from './changed-rows.js';
-import { identity } from './fingerprint.js';
+import { changedRows, type ChangedRowsResult, type KeepPolicy, type KeptRun } from './changed-rows.js';
+import { identity, type Fingerprint } from './fingerprint.js';
 
 function readSanitize(path: string): Mask[] {
   if (!existsSync(path)) throw new EnvError(`There's no sanitize file at ${path}.`);
@@ -65,7 +65,15 @@ export async function profile(path: string, opts: ProfileOptions = {}): Promise<
   const notes: string[] = [];
   let findings: Finding[] = [];
   let runOnce: (i: number) => Promise<{ steps: TraceStep[]; notes: string[]; kept?: KeptRun }>;
-  const keep = !!opts.showChangedRows && !opts.staticOnly && kind !== 'notebook';
+  const traces: Trace[] = [];
+  // Run 1 keeps every step; later runs only steps that differ from run 1 (memory follows what changed).
+  const keep: KeepPolicy | undefined = opts.showChangedRows && !opts.staticOnly && kind !== 'notebook'
+    ? (id, outputs) => {
+      if (!traces.length) return true;
+      const base = traces[0].steps.find((s) => s.step_id === id);
+      return !base || outputSig(base.outputs) !== outputSig(outputs);
+    }
+    : undefined;
   const params: Record<string, string | number | boolean> = { runs };
 
   if (kind === 'sql') {
@@ -99,7 +107,6 @@ export async function profile(path: string, opts: ProfileOptions = {}): Promise<
   }
 
   if (keep) params.show_changed_rows = true;
-  const traces: Trace[] = [];
   const kept: KeptRun[] = [];
   try {
     for (let i = 1; i <= runs; i++) {
@@ -136,8 +143,10 @@ export async function profile(path: string, opts: ProfileOptions = {}): Promise<
 }
 
 /** Run 1 and the first run whose output for this step differs from it, as 0-based indexes. */
+const outputSig = (outputs: Record<string, Fingerprint>) => JSON.stringify(Object.entries(outputs).map(([k, f]) => [k, identity(f)]).sort());
+
 function firstDiffering(traces: Trace[], id: string): [number, number] | null {
-  const sig = (t: Trace) => JSON.stringify(Object.entries(t.steps.find((s) => s.step_id === id)?.outputs ?? {}).map(([k, f]) => [k, identity(f)]).sort());
+  const sig = (t: Trace) => outputSig(t.steps.find((s) => s.step_id === id)?.outputs ?? {});
   const base = sig(traces[0]);
   const i = traces.findIndex((t) => sig(t) !== base);
   return i > 0 ? [0, i] : null;

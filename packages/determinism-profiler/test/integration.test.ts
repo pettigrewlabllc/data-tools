@@ -54,6 +54,7 @@ describe('--show-changed-rows keeps key values out of every file (D1)', () => {
     expect(r.stdout).toContain('keyed by customer');
     expect(r.stdout).toContain('CANARY_7f3a: different values');
     expect(r.stdout).toContain("there's no key to list rows by");
+    expect(r.stdout).toContain("This step is a view");
     expect(scanOut(out)).toEqual([]);
   });
   it('the profile result carries the rows; writeOutputs never sees them', async () => {

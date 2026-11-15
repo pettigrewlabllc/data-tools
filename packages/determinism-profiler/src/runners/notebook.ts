@@ -205,7 +205,8 @@ function displayFingerprint(outputs: NbOutput[], masks: Mask[]): { fp: Fingerpri
   const fp = new Fingerprinter(['line'], true);
   const masked: Record<string, number> = {};
   const raw = new Fingerprinter(['line'], true);
-  for (const l of lines) { fp.addRow([applyMasks(l, masks, masked)]); raw.addRow([l]); }
+  // The unmasked copy still masks memory addresses: they've always been noise, never an answer.
+  for (const l of lines) { fp.addRow([applyMasks(l, masks, masked)]); raw.addRow([applyMasks(l, [ADDRESS_MASK], {})]); }
   const out = fp.finish();
   if (!lines.length && skipped) out.skipped = 'image or widget output';
   // Keep the unmasked one too when masking changed anything, so compare can use it for steps whose inputs moved.

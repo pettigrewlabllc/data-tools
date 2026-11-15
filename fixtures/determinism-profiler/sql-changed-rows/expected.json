@@ -2,7 +2,8 @@
   "input": ".",
   "origins": [
     "02_adjusted.sql:2",
-    "03_regions.sql:2"
+    "03_regions.sql:2",
+    "04_view.sql:2"
   ],
   "inherited": [],
   "inconclusive": [],
@@ -16,7 +17,12 @@
       "at": "03_regions.sql:3",
       "cause": "random",
       "status": "confirmed"
+    },
+    {
+      "at": "04_view.sql:2",
+      "cause": "random",
+      "status": "confirmed"
     }
   ],
-  "score": 33.3
+  "score": 25
 }

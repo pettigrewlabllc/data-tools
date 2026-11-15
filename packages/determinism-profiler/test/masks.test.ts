@@ -37,3 +37,21 @@ describe('--sanitize (nbval format)', () => {
     expect(() => parseSanitize('[a]\nreplace: x\n', 's.cfg')).toThrow(/\[a\] has no regex/);
   });
 });
+
+describe('masks after review', () => {
+  it("doesn't touch decades, 'us' as a word, or abbreviations", () => {
+    expect(mask('the 1990s, 12 us stores, mean 4.5 s.d.')).toEqual({ out: 'the 1990s, 12 us stores, mean 4.5 s.d.', counts: {} });
+  });
+  it('still masks real durations, including at the end of a sentence', () => {
+    expect(mask('took 1.23s. Then 0.5 s, 450ms and 12 seconds.').counts).toEqual({ duration: 4 });
+  });
+  it('catches a bar-less tqdm line before the duration mask can eat it, and leaves a % table alone', () => {
+    expect(mask('7/10 [00:03<00:09, 3.2s/it]')).toEqual({ out: 'PROGRESS', counts: { 'progress bar': 1 } });
+    expect(mask('| 12%| 40 |')).toEqual({ out: '| 12%| 40 |', counts: {} });
+  });
+  it('sanitize: trims, maps \\A and \\Z, unescapes %%, honours (?i)', () => {
+    const m = parseSanitize('[a]\nregex: \\Aid=\\d+\\Z   \nreplace: ID\n[b]\nregex: (?i)done in \\d+%%\nreplace: DONE\n');
+    expect(mask('id=42', m).out).toBe('ID');
+    expect(mask('DONE IN 80%', m).out).toBe('DONE');
+  });
+});

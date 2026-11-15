@@ -120,7 +120,7 @@ Sixteen fixtures in [`fixtures/determinism-profiler`](../../fixtures/determinism
 
 | | |
 |---|---|
-| Planted causes found and confirmed | 14 of 14 |
+| Planted causes found and confirmed | 15 of 15 |
 | Fixtures where the blame landed on the right step | 16 of 16 |
 | Causes reported on the clean fixtures | 0 |
 

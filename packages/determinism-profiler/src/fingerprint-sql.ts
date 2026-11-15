@@ -60,15 +60,20 @@ export async function fingerprintInDuckDB(conn: DuckDBConnection, relation: stri
 
 let seq = 0;
 /** A query result, in its output order: materialised into a temp table (insertion order kept), then fingerprinted. */
-export async function fingerprintQueryInDuckDB(conn: DuckDBConnection, sql: string, keepAs?: string): Promise<Fingerprint> {
+export async function fingerprintQueryInDuckDB(
+  conn: DuckDBConnection, sql: string, keep?: { as: string; when: (fp: Fingerprint) => boolean },
+): Promise<{ fp: Fingerprint; kept: boolean }> {
   const name = `__dp_result_${++seq}`;
   await conn.run(`CREATE TEMP TABLE ${name} AS ${sql}`);
   let kept = false;
   try {
     const fp = await fingerprintInDuckDB(conn, name, true, true);
     // --show-changed-rows keeps this exact result (re-running a query that varies would give a different one).
-    if (keepAs) { await conn.run(`ALTER TABLE ${name} RENAME TO ${keepAs}`); kept = true; }
-    return fp;
+    // A failed rename only means the step isn't kept; it never makes the step an error.
+    if (keep && keep.when(fp)) {
+      try { await conn.run(`ALTER TABLE ${name} RENAME TO ${keep.as}`); kept = true; } catch { kept = false; }
+    }
+    return { fp, kept };
   } finally {
     if (!kept) await conn.run(`DROP TABLE IF EXISTS ${name}`);
   }

@@ -41,3 +41,10 @@ describe('f-strings', () => {
     expect(causes("print(f'took {time.perf_counter() - t0:.2f}s')")).toEqual(['timestamp@1']);
   });
 });
+
+describe('f-strings after review', () => {
+  it('sees code next to escaped braces', () => {
+    expect(causes('print(f"{{{datetime.now()}}}")')).toEqual(['timestamp@1']);
+    expect(causes('print(f"{x:%H} {{literal}} {y!r:>10}")')).toEqual([]);
+  });
+});

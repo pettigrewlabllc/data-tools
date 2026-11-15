@@ -1,6 +1,6 @@
 {
   "cases": 16,
-  "planted_causes_detected": "14/14",
+  "planted_causes_detected": "15/15",
   "attribution_correct": "16/16",
   "clean_case_false_positives": 0,
   "scores_match": "16/16",
@@ -66,10 +66,10 @@
       "score": 50
     },
     "sql-changed-rows": {
-      "planted_found": "2/2",
+      "planted_found": "3/3",
       "attribution": "right",
       "findings_match": true,
-      "score": 33.3
+      "score": 25
     },
     "sql-clean": {
       "planted_found": "0/0",

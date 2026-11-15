@@ -33,6 +33,13 @@ describe('changed-row bisection', () => {
     expect(res.rows).toHaveLength(10);
     expect(res.more).toBe(true);
   });
+  it('exactly 10 changed rows is not "more"', async () => {
+    const a = await db('CREATE TABLE t AS SELECT i AS id, i AS v FROM range(5000) r(i)');
+    const b = await db('CREATE TABLE t AS SELECT i AS id, CASE WHEN i % 500 = 0 THEN -1 ELSE i END AS v FROM range(5000) r(i)');
+    const res = await diffByKey(await side(a, 't'), await side(b, 't'), 'id');
+    expect(res.rows).toHaveLength(10);
+    expect(res.more).toBe(false);
+  });
   it('works on text keys', async () => {
     const a = await db("CREATE TABLE t AS SELECT 'c' || i::VARCHAR AS customer, i AS v FROM range(300) r(i)");
     const b = await db("CREATE TABLE t AS SELECT 'c' || i::VARCHAR AS customer, CASE WHEN i = 222 THEN 0 ELSE i END AS v FROM range(300) r(i)");
@@ -41,5 +48,24 @@ describe('changed-row bisection', () => {
   it('finds no key when nothing is unique, and never picks a float', async () => {
     const a = await db('CREATE TABLE t AS SELECT i % 3 AS g, random() AS r FROM range(30) x(i)');
     expect(await findKey(a, 't', a, 't')).toBeNull();
+  });
+});
+
+describe('keep policy (memory follows what changed)', () => {
+  it('a run keeps only the steps the policy asks for, and never views', async () => {
+    const { planSql, runSqlOnce } = await import('../src/runners/sql.js');
+    const { join } = await import('node:path');
+    const { FIX } = await import('./helpers.js');
+    const plan = planSql(join(FIX, 'sql-changed-rows'));
+    const all = await runSqlOnce(plan, null, () => true);
+    const some = await runSqlOnce(plan, null, (id) => id.startsWith('02_'));
+    try {
+      expect([...all.kept!.tables.keys()].sort()).toEqual(['01_customers.sql:1', '02_adjusted.sql:2', '03_regions.sql:2']);
+      expect([...all.kept!.views]).toEqual(['04_view.sql:2']);
+      expect([...some.kept!.tables.keys()]).toEqual(['02_adjusted.sql:2']);
+    } finally {
+      all.kept!.close();
+      some.kept!.close();
+    }
   });
 });

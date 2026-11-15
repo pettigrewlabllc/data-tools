@@ -107,6 +107,8 @@ export const CHANGED_ROWS = {
   more: 'More rows differ. These are the first 10 found.',
   noKey: "No single column is unique and never empty, so there's no key to list rows by.",
   notKept: "Couldn't keep a copy of this step's output, so its rows can't be listed.",
+  view: "This step is a view, so it's run again whenever it's read. A copy wouldn't match what was compared, so its rows aren't listed.",
+  error: "Couldn't list this step's rows (DuckDB hit an error). The rest of the report is unaffected.",
   none: 'Nothing changed that has rows to list.',
   notSupported: '--show-changed-rows works on SQL and dbt steps. A notebook variable has no key to list rows by.',
 };

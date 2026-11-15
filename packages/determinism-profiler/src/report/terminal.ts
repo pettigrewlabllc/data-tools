@@ -31,7 +31,7 @@ export function renderChangedRows(res: ChangedRowsResult[] | 'not_supported', co
   if (!res.length) lines.push(`  ${W.none}`);
   for (const r of res) {
     if ('skipped' in r) {
-      lines.push(`  • ${r.label}`, `      ${r.skipped === 'no_key' ? W.noKey : W.notKept}`);
+      lines.push(`  • ${r.label}`, `      ${{ no_key: W.noKey, not_kept: W.notKept, view: W.view, error: W.error }[r.skipped]}`);
       continue;
     }
     lines.push(`  • ${W.head(r.label, r.key, r.runA, r.runB)}`);

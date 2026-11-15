@@ -54,13 +54,18 @@ function codeOnly(src: string): string {
     const inner = body.slice(q, -q);
     let kept: string;
     if (/f/i.test(prefix)) {
-      // blank text outside {...}, keep what's inside ({{ and }} are literal braces)
+      // Left to right: {{ and }} are literal braces, any other { opens an expression (nested {} inside it
+      // count too). Code inside expressions is kept, everything else blanked; lengths never change.
+      const out: string[] = [];
       let depth = 0;
-      kept = [...inner].map((ch, i) => {
-        if (ch === '{' && inner[i + 1] !== '{' && inner[i - 1] !== '{') { depth++; return ch; }
-        if (ch === '}' && depth > 0) { depth--; return ch; }
-        return depth > 0 || ch === '\n' ? ch : ' ';
-      }).join('');
+      for (let i = 0; i < inner.length; i++) {
+        const ch = inner[i];
+        if (depth === 0 && (ch === '{' || ch === '}') && inner[i + 1] === ch) { out.push('  '); i++; continue; }
+        if (ch === '{') { depth++; out.push(ch); continue; }
+        if (ch === '}' && depth > 0) { depth--; out.push(ch); continue; }
+        out.push(depth > 0 || ch === '\n' ? ch : ' ');
+      }
+      kept = out.join('');
     } else kept = inner.replace(/[^\n]/g, ' ');
     return prefix + body.slice(0, q) + kept + body.slice(-q);
   });

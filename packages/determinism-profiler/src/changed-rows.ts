@@ -1,4 +1,5 @@
 import type { DuckDBConnection, DuckDBInstance, DuckDBValue } from '@duckdb/node-api';
+import type { Fingerprint } from './fingerprint.js';
 import type { StepResult } from './types.js';
 
 /**
@@ -12,17 +13,26 @@ import type { StepResult } from './types.js';
 export interface KeptRun {
   conn: DuckDBConnection;
   tables: Map<string, string>;
+  /** Steps that are views: re-run when read, so a copy wouldn't match what was compared. Never kept. */
+  views: Set<string>;
   close(): void;
 }
 
+/**
+ * Which steps a run keeps a copy of. Run 1 keeps everything it can; later runs keep only steps whose
+ * output differs from run 1, so memory grows with what changed, not with the whole analysis times N.
+ */
+export type KeepPolicy = (stepId: string, outputs: Record<string, Fingerprint>) => boolean;
+
 export function keptRun(instance: DuckDBInstance, conn: DuckDBConnection): KeptRun {
-  return { conn, tables: new Map(), close: () => { conn.closeSync(); instance.closeSync(); } };
+  let closed = false;
+  return { conn, tables: new Map(), views: new Set(), close: () => { if (closed) return; closed = true; conn.closeSync(); instance.closeSync(); } };
 }
 
 export interface ChangedRow { key: string; change: 'only_a' | 'only_b' | 'changed' }
 export type ChangedRowsResult =
   | { step_id: string; label: string; key: string; runA: number; runB: number; rows: ChangedRow[]; more: boolean }
-  | { step_id: string; label: string; skipped: 'no_key' | 'not_kept' };
+  | { step_id: string; label: string; skipped: 'no_key' | 'not_kept' | 'view' | 'error' };
 
 const q = (s: string) => '"' + s.replaceAll('"', '""') + '"';
 const LIMIT = 10;
@@ -92,9 +102,11 @@ export async function diffByKey(a: Side, b: Side, key: string, limit = LIMIT): P
   const rows: ChangedRow[] = [];
   let more = false;
   const visit = async (lo: Bound, hi: Bound): Promise<void> => {
-    if (rows.length >= limit) { more = true; return; }
+    if (more) return;
     const [sa, sb] = await Promise.all([stats(a, key, lo, hi), stats(b, key, lo, hi)]);
     if (sa.n === sb.n && sa.h === sb.h) return;
+    // Only a range that actually differs, found after the limit, means there are more.
+    if (rows.length >= limit) { more = true; return; }
     if (Math.max(sa.n, sb.n) <= LEAF) {
       const [la, lb] = await Promise.all([leaf(a, key, lo, hi), leaf(b, key, lo, hi)]);
       const keys = [...new Set([...la.keys(), ...lb.keys()])].sort((x, y) => x.localeCompare(y, 'en', { numeric: true }));
@@ -129,15 +141,21 @@ export async function changedRows(steps: StepResult[], runs: KeptRun[], differin
     const pair = differing(s.step_id);
     if (!pair) continue;
     const [ia, ib] = pair;
+    if (runs[ia]?.views.has(s.step_id) || runs[ib]?.views.has(s.step_id)) { out.push({ step_id: s.step_id, label: s.label, skipped: 'view' }); continue; }
     const ta = runs[ia]?.tables.get(s.step_id);
     const tb = runs[ib]?.tables.get(s.step_id);
     if (!ta || !tb) { out.push({ step_id: s.step_id, label: s.label, skipped: 'not_kept' }); continue; }
-    const ca = runs[ia].conn;
-    const cb = runs[ib].conn;
-    const key = await findKey(ca, ta, cb, tb);
-    if (!key) { out.push({ step_id: s.step_id, label: s.label, skipped: 'no_key' }); continue; }
-    const res = await diffByKey({ conn: ca, table: ta, rowHash: await rowHashExpr(ca, ta) }, { conn: cb, table: tb, rowHash: await rowHashExpr(cb, tb) }, key);
-    out.push({ step_id: s.step_id, label: s.label, key, runA: ia + 1, runB: ib + 1, ...res });
+    // One step failing to diff (out of memory, an odd type) skips that step; it never costs the report.
+    try {
+      const ca = runs[ia].conn;
+      const cb = runs[ib].conn;
+      const key = await findKey(ca, ta, cb, tb);
+      if (!key) { out.push({ step_id: s.step_id, label: s.label, skipped: 'no_key' }); continue; }
+      const res = await diffByKey({ conn: ca, table: ta, rowHash: await rowHashExpr(ca, ta) }, { conn: cb, table: tb, rowHash: await rowHashExpr(cb, tb) }, key);
+      out.push({ step_id: s.step_id, label: s.label, key, runA: ia + 1, runB: ib + 1, ...res });
+    } catch {
+      out.push({ step_id: s.step_id, label: s.label, skipped: 'error' });
+    }
   }
   return out;
 }
