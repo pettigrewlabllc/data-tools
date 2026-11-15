@@ -1,6 +1,7 @@
 import { ident } from '../sql/quote';
 import { getCategory } from './taxonomy';
 import type { ColumnFact } from './check';
+import { GENERALISE_DETAIL, OPTION_DETAIL } from './messages';
 
 export type OptionId = 'generalise' | 'aggregate' | 'suppress_rare' | 'drop' | 'restrict' | 'update_notice' | 'hash';
 export const OPTION_IDS: OptionId[] = ['generalise', 'aggregate', 'suppress_rare', 'drop', 'restrict', 'update_notice', 'hash'];
@@ -19,11 +20,11 @@ export interface OptionApplication {
   note?: 'pseudonymises' | 'restricted';
 }
 
-const GENERALISE: Record<string, { detail: string; expr: (c: string) => string; after: string }> = {
-  'user.contact.address.postal_code': { detail: 'ZIP to its first 3 digits', expr: (c) => `left(CAST(${c} AS VARCHAR), 3)`, after: 'user.location.imprecise' },
-  'user.demographic.date_of_birth': { detail: 'date of birth to the year', expr: (c) => `year(TRY_CAST(${c} AS DATE))`, after: 'user.demographic.age_range' },
-  'user.location.precise': { detail: 'latitude and longitude to 1 decimal place (about 11 km)', expr: (c) => `round(TRY_CAST(${c} AS DOUBLE), 1)`, after: 'user.location.imprecise' },
-  'user.device.ip_address': { detail: 'IPv4 address to its first three parts', expr: (c) => `regexp_replace(CAST(${c} AS VARCHAR), '\\.\\d+$', '.0')`, after: 'user.device.ip_address' },
+const GENERALISE: Record<string, { expr: (c: string) => string; after: string }> = {
+  'user.contact.address.postal_code': { expr: (c) => `left(CAST(${c} AS VARCHAR), 3)`, after: 'user.location.imprecise' },
+  'user.demographic.date_of_birth': { expr: (c) => `year(TRY_CAST(${c} AS DATE))`, after: 'user.demographic.age_range' },
+  'user.location.precise': { expr: (c) => `round(TRY_CAST(${c} AS DOUBLE), 1)`, after: 'user.location.imprecise' },
+  'user.device.ip_address': { expr: (c) => `regexp_replace(CAST(${c} AS VARCHAR), '\\.\\d+$', '.0')`, after: 'user.device.ip_address' },
 };
 
 /** Options that make sense for a column of this category, in the order they are offered. */
@@ -31,13 +32,13 @@ export function optionsFor(category: string, opts: { notDisclosed?: boolean } = 
   const k = getCategory(category);
   const out: OptionApplication[] = [];
   const g = GENERALISE[category];
-  if (g) out.push({ id: 'generalise', detail: g.detail, expr: g.expr, after: g.after });
-  out.push({ id: 'aggregate', detail: 'keep counts by group instead of one row per person', expr: null, after: null });
-  if (k.kind !== 'other') out.push({ id: 'suppress_rare', detail: `blank out values that fewer than ${RARE_K} rows share`, expr: (c) => `CASE WHEN count(*) OVER (PARTITION BY ${c}) < ${RARE_K} THEN NULL ELSE ${c} END`, after: category });
-  out.push({ id: 'drop', detail: 'remove the column', expr: null, after: null });
-  out.push({ id: 'restrict', detail: 'limit who can read it', expr: null, after: category, noDataChange: true, note: 'restricted' });
-  if (opts.notDisclosed !== false) out.push({ id: 'update_notice', detail: 'name it in the notice', expr: null, after: category, noDataChange: true });
-  if (k.kind === 'direct') out.push({ id: 'hash', detail: 'replace with a one-way hash', expr: (c) => `md5(CAST(${c} AS VARCHAR))`, after: category, note: 'pseudonymises' });
+  if (g) out.push({ id: 'generalise', detail: GENERALISE_DETAIL[category], expr: g.expr, after: g.after });
+  out.push({ id: 'aggregate', detail: OPTION_DETAIL.aggregate, expr: null, after: null });
+  if (k.kind !== 'other') out.push({ id: 'suppress_rare', detail: OPTION_DETAIL.suppress_rare(RARE_K), expr: (c) => `CASE WHEN count(*) OVER (PARTITION BY ${c}) < ${RARE_K} THEN NULL ELSE ${c} END`, after: category });
+  out.push({ id: 'drop', detail: OPTION_DETAIL.drop, expr: null, after: null });
+  out.push({ id: 'restrict', detail: OPTION_DETAIL.restrict, expr: null, after: category, noDataChange: true, note: 'restricted' });
+  if (opts.notDisclosed !== false) out.push({ id: 'update_notice', detail: OPTION_DETAIL.update_notice, expr: null, after: category, noDataChange: true });
+  if (k.kind === 'direct') out.push({ id: 'hash', detail: OPTION_DETAIL.hash, expr: (c) => `md5(CAST(${c} AS VARCHAR))`, after: category, note: 'pseudonymises' });
   return out;
 }
 

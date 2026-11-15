@@ -1,0 +1,15 @@
+Stride Privacy Notice
+
+Information we collect
+
+When you create an account we collect your name, email address and a password. We also collect your age range and gender so we can tailor workouts.
+
+We collect your approximate location, based on your IP address, to show nearby classes. We do not collect precise geolocation.
+
+Our app collects device identifiers and your IP address to keep your account secure and to understand how the app is used.
+
+We may collect health information you choose to enter, such as your weight or heart rate.
+
+How we use it
+
+We use this information to provide the service, send you updates and prevent fraud.

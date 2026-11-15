@@ -1,0 +1,2 @@
+CREATE TABLE employees (employee_id VARCHAR, first_name VARCHAR, last_name VARCHAR, home_address VARCHAR, phone VARCHAR, work_email VARCHAR, ssn VARCHAR, bank_account VARCHAR, salary DECIMAL(10,2), job_title VARCHAR, hire_date DATE, department_id INTEGER);
+CREATE TABLE hr_records (employee_id VARCHAR, date_of_birth DATE, passport_number VARCHAR, union_member BOOLEAN, disability_status VARCHAR, ethnicity VARCHAR, emergency_contact_phone VARCHAR);

@@ -7,14 +7,17 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/core && tsc -p packages/core-node && tsc -p packages/join-receipt --noEmit",
+    "typecheck": "tsc -p packages/core && tsc -p packages/core-node && tsc -p packages/join-receipt --noEmit && tsc -p packages/privacydiff --noEmit",
     "accuracy": "tsx fixtures/join-receipt/accuracy.ts",
     "accuracy:real": "tsx fixtures/join-receipt/real-accuracy.ts",
     "fixtures": "tsx fixtures/join-receipt/generate.ts",
     "dev": "npm run dev -w join-receipt",
     "e2e": "playwright test",
     "accuracy:valentine": "tsx fixtures/join-receipt/valentine/run.ts",
-    "accuracy:valentine:label": "tsx fixtures/join-receipt/valentine/label.ts"
+    "accuracy:valentine:label": "tsx fixtures/join-receipt/valentine/label.ts",
+    "accuracy:privacydiff": "tsx fixtures/privacydiff/accuracy.ts",
+    "dev:privacydiff": "npm run dev -w privacydiff",
+    "privacy:rules": "node scripts/gen-privacy-rules.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

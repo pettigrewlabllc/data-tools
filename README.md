@@ -116,3 +116,26 @@ In Chrome an edit recalculates in 0.6 seconds on the smaller pair and 2.4 on the
 ## License
 
 MIT
+
+
+---
+
+# PrivacyDiff
+
+Check your data against your privacy notice. Paste the notice, and PrivacyDiff drafts a `policy.yml` for you to confirm. Add files or `CREATE TABLE` statements, and each column gets a proposed personal-information category. Findings come in four classes: disclosed, disclosed only vaguely, not disclosed, contradicted. Each quotes your notice sentence (or says none matched) and cites the rule it relates to. It also reports what a combination of tables brings together and where a set of columns narrows to one row. It runs in your browser.
+
+```bash
+npm run dev:privacydiff       # http://localhost:3068, click "Try the sample"
+npm run accuracy:privacydiff  # writes fixtures/privacydiff/accuracy.json
+npm run privacy:rules         # regenerate rules.data.ts after editing rules.yml
+```
+
+**Accuracy** (from `fixtures/privacydiff/accuracy.json`, fixtures written by the tool's author, so treat as a floor on effort, not a field measurement):
+- Direct-identifier recall on 354 labelled columns (137 direct): 1 with values, 0.964 from names alone (DDL mode). Target 0.9.
+- Precision of "not disclosed" on 6 synthetic notices with 81 labelled columns: 1 (20 of 20 reported). Target 0.9.
+
+**Legal stance.** It cites the rule and never gives a verdict. The wording is enforced by a test (ADR 5). The rule set in `packages/core/src/privacy/rules.yml` is a draft awaiting Joel's authoring and approval, and the CPRA, GDPR, HIPAA and COPPA citations in it and in the taxonomy need his check. Nothing here is legal advice.
+
+**Not in v1.** The CLI, GitHub Action and tracking-plan check (PRD C11 to C17), and the demo GIF.
+
+Decisions: [5 wording rule](docs/adr/0005-wording-rule.md), [6 taxonomy](docs/adr/0006-fideslang-compatible-taxonomy.md), [7 no verdict](docs/adr/0007-no-verdict-stance.md), [8 static vs data mode](docs/adr/0008-static-vs-data-mode.md). PRD: [docs/specs/2026-11-09-privacydiff-prd.md](docs/specs/2026-11-09-privacydiff-prd.md).

@@ -1,0 +1,54 @@
+{
+  "users.user_id": {
+    "category": "user.unique_id",
+    "cls": "not_disclosed"
+  },
+  "users.email": {
+    "category": "user.contact.email",
+    "cls": "disclosed"
+  },
+  "users.full_name": {
+    "category": "user.name",
+    "cls": "disclosed"
+  },
+  "users.ip_address": {
+    "category": "user.device.ip_address",
+    "cls": "disclosed"
+  },
+  "users.religious_affiliation": {
+    "category": "user.religious_belief",
+    "cls": "not_disclosed"
+  },
+  "users.ethnicity": {
+    "category": "user.demographic.race_ethnicity",
+    "cls": "not_disclosed"
+  },
+  "trips.user_id": {
+    "category": "user.unique_id",
+    "cls": "not_disclosed"
+  },
+  "trips.start_lat": {
+    "category": "user.location.precise",
+    "cls": "vague"
+  },
+  "trips.start_lon": {
+    "category": "user.location.precise",
+    "cls": "vague"
+  },
+  "trips.end_lat": {
+    "category": "user.location.precise",
+    "cls": "vague"
+  },
+  "trips.end_lon": {
+    "category": "user.location.precise",
+    "cls": "vague"
+  },
+  "page_views.user_id": {
+    "category": "user.unique_id",
+    "cls": "not_disclosed"
+  },
+  "page_views.search_history": {
+    "category": "user.behavior",
+    "cls": "disclosed"
+  }
+}

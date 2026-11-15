@@ -1,0 +1,18 @@
+{
+  "accounts.full_name": { "category": "user.name", "cls": "disclosed" },
+  "accounts.email": { "category": "user.contact.email", "cls": "disclosed" },
+  "accounts.password_hash": { "category": "user.credentials", "cls": "disclosed" },
+  "accounts.age_range": { "category": "user.demographic.age_range", "cls": "disclosed" },
+  "accounts.gender": { "category": "user.demographic.gender", "cls": "disclosed" },
+  "workouts.user_id": { "category": "user.unique_id", "cls": "not_disclosed" },
+  "workouts.gps_lat": { "category": "user.location.precise", "cls": "contradicted" },
+  "workouts.gps_lng": { "category": "user.location.precise", "cls": "contradicted" },
+  "workouts.avg_heart_rate": { "category": "user.health_and_medical", "cls": "vague" },
+  "devices.device_id": { "category": "user.device.device_id", "cls": "disclosed" },
+  "devices.ip_address": { "category": "user.device.ip_address", "cls": "disclosed" },
+  "devices.push_token": { "category": "user.device.device_id", "cls": "disclosed" },
+  "profile.user_id": { "category": "user.unique_id", "cls": "not_disclosed" },
+  "profile.date_of_birth": { "category": "user.demographic.date_of_birth", "cls": "contradicted" },
+  "profile.phone_number": { "category": "user.contact.phone_number", "cls": "not_disclosed" },
+  "profile.home_address": { "category": "user.contact.address.street", "cls": "not_disclosed" }
+}

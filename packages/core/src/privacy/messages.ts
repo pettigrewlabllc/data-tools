@@ -56,8 +56,6 @@ export const CATEGORY_LABEL: Record<string, string> = {
 };
 export const labelOf = (id: string) => CATEGORY_LABEL[id] ?? id;
 
-export const CPRA_GROUP_LABEL: Record<string, string> = {};
-
 export const STATUS_LABEL = { disclosed: 'Disclosed', vague: 'Vague', not_collected: 'Says not collected' } as const;
 
 export const CLASS_LABEL: Record<FindingClass, string> = {
@@ -77,6 +75,25 @@ export const CLASS_HELP: Record<FindingClass, string> = {
 export const PURPOSE_LABEL: Record<string, string> = {
   provide_service: 'Provide the service', analytics: 'Analytics', advertising: 'Advertising and marketing', security_fraud: 'Security and fraud',
   legal: 'Legal obligations', research: 'Research and improving the product', communications: 'Communicating with you', personalisation: 'Personalisation',
+};
+
+export const OPTION_LABEL: Record<string, string> = {
+  generalise: 'Generalise', aggregate: 'Aggregate', suppress_rare: 'Suppress rare values', drop: 'Drop the column',
+  restrict: 'Restrict access', update_notice: 'Update the notice', hash: 'Hash it',
+};
+export const OPTION_DETAIL = {
+  aggregate: 'keep counts by group instead of one row per person',
+  suppress_rare: (k: number) => `blank out values that fewer than ${k} rows share`,
+  drop: 'remove the column',
+  restrict: 'limit who can read it',
+  update_notice: 'name it in the notice',
+  hash: 'replace with a one-way hash',
+};
+export const GENERALISE_DETAIL: Record<string, string> = {
+  'user.contact.address.postal_code': 'ZIP to its first 3 digits',
+  'user.demographic.date_of_birth': 'date of birth to the year',
+  'user.location.precise': 'latitude and longitude to 1 decimal place (about 11 km)',
+  'user.device.ip_address': 'IPv4 address to its first three parts',
 };
 
 export const M = {
@@ -117,6 +134,7 @@ export const M = {
   // combination
   combinationBrings: (n: number, tables: number) => `Together these ${tables} tables bring ${n} categories of personal information into one place.`,
   combinationOnly: 'Fires only in the combination',
+  because: (cats: string[]) => `Because the tables hold: ${cats.map(labelOf).join(', ')}.`,
   firesInTable: (table: string) => `Already fires in ${table}.`,
   noRuleFires: 'None of the rules fire on these categories.',
 

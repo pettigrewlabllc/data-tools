@@ -1,0 +1,62 @@
+{
+  "customers.customer_id": {
+    "category": "user.unique_id",
+    "cls": "vague"
+  },
+  "customers.first_name": {
+    "category": "user.name",
+    "cls": "vague"
+  },
+  "customers.last_name": {
+    "category": "user.name",
+    "cls": "vague"
+  },
+  "customers.email": {
+    "category": "user.contact.email",
+    "cls": "disclosed"
+  },
+  "customers.phone": {
+    "category": "user.contact.phone_number",
+    "cls": "vague"
+  },
+  "customers.birthdate": {
+    "category": "user.demographic.date_of_birth",
+    "cls": "not_disclosed"
+  },
+  "customers.gender": {
+    "category": "user.demographic.gender",
+    "cls": "not_disclosed"
+  },
+  "orders.customer_id": {
+    "category": "user.unique_id",
+    "cls": "vague"
+  },
+  "orders.shipping_address": {
+    "category": "user.contact.address.street",
+    "cls": "disclosed"
+  },
+  "orders.ship_zip": {
+    "category": "user.contact.address.postal_code",
+    "cls": "vague"
+  },
+  "orders.card_number": {
+    "category": "user.financial",
+    "cls": "disclosed"
+  },
+  "web_events.cookie_id": {
+    "category": "user.device.cookie_id",
+    "cls": "disclosed"
+  },
+  "web_events.ip": {
+    "category": "user.device.ip_address",
+    "cls": "vague"
+  },
+  "web_events.lat": {
+    "category": "user.location.precise",
+    "cls": "not_disclosed"
+  },
+  "web_events.lon": {
+    "category": "user.location.precise",
+    "cls": "not_disclosed"
+  }
+}
