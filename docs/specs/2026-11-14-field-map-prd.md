@@ -37,7 +37,7 @@ Customer quotes are illustrative; launch copy gets its own joel-voice pass.
 
 | Who | With Field Map |
 |---|---|
-| Leo, integration developer (proposed primary, §11) | Maps a vendor API to his app's types in minutes, with the uncertain fields called out |
+| Leo, integration developer (primary) | Maps a vendor API to his app's types in minutes, with the uncertain fields called out |
 | Priya, Kaggle analyst | Turns nested API JSON into the flat table she wants without hand-writing `json_normalize` paths |
 | Dana, platform lead | Runs the check in CI against recorded samples so a vendor change fails a build, not a report |
 | Sam, someone hiring Joel | Sees the family's design (closed grammar, decision files, AI proposes and checks decide) on a second, different problem |
@@ -82,12 +82,12 @@ Mapping JSON from an API into a known shape is done by eye: read the payload, gu
 
 | Persona | Role here |
 |---|---|
-| **Leo, integration developer** (proposed primary user) | Wiring a vendor API into his app's own types; has the docs, a test account and a target type |
+| **Leo, integration developer** (primary user) | Wiring a vendor API into his app's own types; has the docs, a test account and a target type |
 | **Priya, Kaggle analyst** | Has nested API JSON, wants a flat table |
 | **Dana, platform lead** | Wants vendor changes caught in CI |
 | **Sam, hiring reader** (primary reader) | Gives the repo five minutes |
 
-Leo as primary user is a departure from the family default (Priya). §11 flags it.
+Leo as primary user is a departure from the family default (Priya). Joel's call, 2026-11-14: mapping an API into your own types is an integration developer's job, so the first screen, the samples and the fixture targets are built for him. Priya's flat-table case still works, because a column list is a target shape.
 
 ## 6. User stories
 
@@ -219,13 +219,12 @@ Confident precision is the promise; coverage keeps it honest. A tool can hit 100
 | Question | Who | Blocking? |
 |---|---|---|
 | **Join Receipt's PRs (#1–#4, #6–#9) merged to main first.** The core library Field Map reuses exists only on that unmerged stack | Joel | **Yes, before the build starts** |
-| Primary user: Leo (integration developer) or Priya (analyst), the family default? It changes the samples and the first screen | Joel | v1 design |
 | Where it sits in the build order: before or after PrivacyDiff | Joel | Before build |
 | Final name; trademark/domain check | Joel + joel-voice | Before launch page |
 | Coverage targets for example-record and column-list targets, once there's a first run to look at | Joel | No |
 | Licence of the MaDI-Bench data for the held-out set | Data | No (the held-out set can be built without it) |
 
-Resolved in review: JSONata isn't stable across its own minor versions, so the exact version is pinned in `fieldmap.yml`. Masking: raw values on screen with a hide toggle; categorical pass-through in the model payload.
+Resolved: primary user is Leo, the integration developer (Joel, 2026-11-14). In review: JSONata isn't stable across its own minor versions, so the exact version is pinned in `fieldmap.yml`. Masking: raw values on screen with a hide toggle; categorical pass-through in the model payload.
 
 ## 12. Phasing
 

@@ -31,7 +31,7 @@ These replace the single combined PRD of 2026-11-08 (in git history on this bran
 
 ## Shared conventions (all five)
 
-- **Audience.** User: a Kaggle-style analyst who doesn't use dbt (Joel's bias), with dbt users served by the same output. Reader: someone deciding whether to hire Joel, who opens the repo and should conclude "this person knows how to do stuff" within five minutes.
+- **Audience.** User: a Kaggle-style analyst who doesn't use dbt (Joel's bias), with dbt users served by the same output. Exception: Field Map's primary user is an integration developer (Joel, 2026-11-14). Reader: someone deciding whether to hire Joel, who opens the repo and should conclude "this person knows how to do stuff" within five minutes.
 - **One Node/TypeScript runtime** for web, CLI and GitHub Action. No bundled Python. DuckDB is the local scratchpad (DuckDB-Wasm in the browser, `@duckdb/node-api` in the CLI). Rationale and replacements are in each PRD's architecture section.
 - **AI proposes, a local engine decides** (SQL in DuckDB for tables; JSONata for nested JSON in Field Map). Models are optional (user's own key or a local model), off by default, fill closed grammars or draft files, and never produce a number. Every proposal is run and checked before anyone sees it. A payload panel shows exactly what would be sent.
 - **No data leaves the machine** unless the user connects a model, and then only what the payload panel shows. No accounts, no backend, no shared label collection.
