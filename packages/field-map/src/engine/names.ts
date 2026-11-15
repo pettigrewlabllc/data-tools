@@ -110,7 +110,10 @@ export function leafSim(a: string, b: string): number {
   if (!fa || !fb) return 0;
   if (fa === fb) return 1;
   const whole = tokenSim(fa, fb);
-  return Math.max(whole, listSim(ta, tb));
+  // Every word of the shorter name appears in the longer one: `price` in `sale_price`, `email` in `email_address`.
+  const [short, long] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  const contained = short.every((x) => long.includes(x)) ? 0.8 : 0;
+  return Math.max(whole, contained, listSim(ta, tb));
 }
 
 /**

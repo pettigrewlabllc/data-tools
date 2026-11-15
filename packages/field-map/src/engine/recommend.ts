@@ -180,7 +180,8 @@ function evidencePart(f: TargetField, p: PathProfile | undefined, sourceOp: Sour
 }
 
 function namePart(sim: number, why: string): ScorePart {
-  return { name: 'name', points: Math.round(40 * sim), of: 40, why };
+  const how = sim >= 0.95 ? 'Same name' : sim >= 0.7 ? 'Close name' : sim >= 0.4 ? 'Name partly matches' : 'Name barely matches';
+  return { name: 'name', points: Math.round(40 * sim), of: 40, why: sim >= 0.95 && / and /.test(why) ? how : `${how} (${why})` };
 }
 
 // ---------- candidate generation
@@ -194,7 +195,7 @@ function draftsFor(f: TargetField, profile: SourceProfile, srcContext: Path | nu
       if (p.kind !== 'scalar') continue;
       const sim = nameSimilarity(leafPath, p.path);
       const { transforms, flags } = proposeTransforms(f, p);
-      drafts.push({ source: { op: 'path', path: p.path }, transforms, sourceId: p.id, name: sim, nameWhy: `${showPath(f.path)} ~ ${showPath(p.path)}`, flags, profile: p });
+      drafts.push({ source: { op: 'path', path: p.path }, transforms, sourceId: p.id, name: sim, nameWhy: `${showPath(f.path)} and ${showPath(p.path)}`, flags, profile: p });
     }
     // Split names: a full-name target and first/last source fields under one parent.
     if (hasToken(leafPath, 'name') && !hasToken(leafPath, 'first', 'last', 'given', 'family', 'sur', 'user', 'file', 'display')) {
@@ -221,7 +222,7 @@ function draftsFor(f: TargetField, profile: SourceProfile, srcContext: Path | nu
     for (const p of pool) {
       if (p.kind === 'scalar_array') {
         const tsP = proposeTransforms(f, p);
-        drafts.push({ source: { op: 'values', array: p.path, field: [] }, transforms: tsP.transforms, sourceId: p.id, name: nameSimilarity(leafPath, p.path), nameWhy: `${showPath(f.path)} ~ ${showPath(p.path)}`, flags: tsP.flags, profile: p });
+        drafts.push({ source: { op: 'values', array: p.path, field: [] }, transforms: tsP.transforms, sourceId: p.id, name: nameSimilarity(leafPath, p.path), nameWhy: `${showPath(f.path)} and ${showPath(p.path)}`, flags: tsP.flags, profile: p });
       }
     }
     // A list of one field from each item: `skus` ← items[].sku.
@@ -229,7 +230,7 @@ function draftsFor(f: TargetField, profile: SourceProfile, srcContext: Path | nu
       for (const p of fieldsUnder(profile, arr.path).filter((x) => x.kind === 'scalar')) {
         const sim = Math.max(nameSimilarity(leafPath, p.path), nameSimilarity(leafPath, [...arr.path, ...p.path]) * 0.95);
         const tsP = proposeTransforms(f, p);
-        drafts.push({ source: { op: 'values', array: arr.path, field: p.path }, transforms: tsP.transforms, sourceId: p.id, name: sim, nameWhy: `${showPath(f.path)} ~ ${p.id}`, flags: tsP.flags, profile: p });
+        drafts.push({ source: { op: 'values', array: arr.path, field: p.path }, transforms: tsP.transforms, sourceId: p.id, name: sim, nameWhy: `${showPath(f.path)} and ${p.id}`, flags: tsP.flags, profile: p });
       }
     }
   }
@@ -329,7 +330,7 @@ function questionFor(f: TargetField, cands: Candidate[], profile: SourceProfile,
     const close = second && top.score - second.score < G;
     const opts = cands.slice(0, close ? Math.min(3, cands.filter((c) => top.score - c.score < G).length) : 3);
     const text = close
-      ? `Which one is ${f.id}? ${opts.map((o) => o.sourceId).join(' and ')} score within ${G} points of each other.`
+      ? `Which one is ${f.id}? ${opts.length > 2 ? opts.slice(0, -1).map((o) => o.sourceId).join(', ') + ' and ' + opts[opts.length - 1].sourceId : opts.map((o) => o.sourceId).join(' and ')} score within ${G} points of each other.`
       : `The best match for ${f.id} scores ${top.score}, under ${T}. Is it one of these?`;
     return { status: 'question', chosen: null, question: { kind: close ? 'close_call' : 'low_score', text, options: opts.map((c) => ({ label: c.sourceId, candidate: c, samples: optionSamples(c) })) } };
   }
@@ -351,7 +352,7 @@ function questionFor(f: TargetField, cands: Candidate[], profile: SourceProfile,
     if (years.some((y) => y < 1990 || y > 2040)) {
       const units = ['s', 'ms', 'us', 'ns'] as const;
       const opts = units.map((u) => ({ label: u === 's' ? 'Seconds' : u === 'ms' ? 'Milliseconds' : u === 'us' ? 'Microseconds' : 'Nanoseconds', candidate: { ...top, mapping: { ...top.mapping, transforms: top.mapping.transforms.map((t) => (t === pd ? { ...pd, from: `epoch_${u}` as const } : t)) } }, samples: p.values.slice(0, 5).map((v) => new Date(epochSeconds(v, u) * 1000).toISOString()) }));
-      return { status: 'question', chosen: null, question: { kind: 'epoch', text: `Is ${p.id} in seconds or milliseconds? Some readings land outside 1990–2040.`, options: opts } };
+      return { status: 'question', chosen: null, question: { kind: 'epoch', text: `Is ${p.id} in seconds or milliseconds? Some readings land before 1990 or after 2040, which usually means the unit is wrong.`, options: opts } };
     }
   }
   void items;
@@ -398,7 +399,7 @@ async function recommendArray(target: Target, f: TargetField, profile: SourcePro
     }
     const fit = kids.length ? kids.reduce((n, k) => n + (k.candidates[0]?.score ?? 0), 0) / kids.length / 100 : 0.5;
     const sim = nameSimilarity(f.path, arr.path);
-    const parts: ScorePart[] = [namePart(sim, `${showPath(f.path)} ~ ${showPath(arr.path)}`), { name: 'evidence', points: Math.round(60 * fit), of: 60, why: `its items fill the child fields at an average of ${Math.round(fit * 100)}` }];
+    const parts: ScorePart[] = [namePart(sim, `${showPath(f.path)} and ${showPath(arr.path)}`), { name: 'evidence', points: Math.round(60 * fit), of: 60, why: `its items fill the child fields at an average of ${Math.round(fit * 100)}` }];
     const score = Math.round((100 * parts.reduce((n, p) => n + p.points, 0)) / 100);
     const mapping: FieldMapping = { target: f.path, source: { op: 'nested', array: arr.path, fields: kids.map((k) => (k.chosen ?? k.candidates[0])?.mapping).filter((m): m is FieldMapping => !!m) }, transforms: [] };
     scored.push({ arr, kids, cand: { mapping, sourceId: arr.id, score, parts, reason: parts[1].why, examples: [{ before: `${share(arr.present, arr.total)} records have ${arr.id}`, after: `${arr.items ?? 0} items` }], flags: [] } });
@@ -432,3 +433,19 @@ export function approvedMappings(recs: FieldRec[], decisions: Map<string, Candid
 }
 
 export type { Scalar };
+
+/**
+ * Score a mapping someone else proposed (a person's edit, a model's draft) exactly as the rules score their own:
+ * compiled, run on the samples, and checked against the target before it is shown.
+ */
+export async function scoreProposal(target: Target, f: TargetField, mapping: FieldMapping, profile: SourceProfile, records: Json[], flags: string[] = []): Promise<Candidate> {
+  const s = mapping.source;
+  const srcCtx = f.context ? (mapping as FieldMapping & { sourceContext?: Path }).sourceContext ?? null : null;
+  const firstPath: Path | null = s.op === 'path' ? s.path : s.op === 'coalesce' || s.op === 'concat' ? s.paths[0] : s.op === 'values' ? [...s.array, ...s.field] : s.op === 'pick' ? [...s.array, ...s.field] : s.op === 'count' || s.op === 'nested' ? s.array : null;
+  const pf = s.op === 'path' ? profile.paths.find((p) => JSON.stringify(p.path) === JSON.stringify(s.path) && JSON.stringify(p.context) === JSON.stringify(srcCtx)) : undefined;
+  const id = s.op === 'path' ? (pf?.id ?? showPath(s.path)) : s.op === 'concat' ? s.paths.map(showPath).join(' + ') : s.op === 'coalesce' ? s.paths.map(showPath).join(' or ') : s.op === 'count' ? `count(${showPath(s.array)}[])` : s.op === 'constant' ? `constant ${JSON.stringify(s.value)}` : s.op === 'values' ? `${showPath(s.array)}[]${s.field.length ? '.' + showPath(s.field) : ''}` : s.op === 'pick' ? `${showPath(s.array)}[${typeof s.which === 'string' ? s.which : `${showPath(s.which.key)}=${JSON.stringify(s.which.equals)}`}].${showPath(s.field)}` : `${showPath(s.array)}[]`;
+  const draft: Draft = { source: s, transforms: mapping.transforms, sourceId: id, name: firstPath ? nameSimilarity(f.path, firstPath) : 0.5, nameWhy: firstPath ? `${showPath(f.path)} and ${showPath(firstPath)}` : 'a fixed value', flags, profile: pf };
+  const items = srcCtx ? records.flatMap((r) => { const v = getPath(r, srcCtx); return Array.isArray(v) ? v : v && typeof v === 'object' ? [v] : []; }) : records;
+  const [c] = await evaluate(f, [draft], items.slice(0, SCORE_RECORDS), target.kind !== 'columns');
+  return c;
+}
