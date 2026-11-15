@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { toYaml, emitSqlScript, emitPython, joinParts, withCtes, planOf, mappingTable, TOOL, TOOL_VERSION, type Mapping, type TableProfile, type Db } from '@data-tools/core';
+import { toYaml, contractYaml, emitSqlScript, emitPython, joinParts, withCtes, planOf, mappingTable, TOOL, TOOL_VERSION, type Mapping, type TableProfile, type Db } from '@data-tools/core';
 import type { Card } from './ReceiptCard';
 import type { WasmDb } from '../wasmDb';
 
@@ -31,12 +31,13 @@ function download(name: string, data: string | Uint8Array, type: string) {
 }
 
 export function ExportPanel({ cards, profiles, db, copies }: { cards: Card[]; profiles: TableProfile[]; db: () => Promise<Db>; copies: Map<string, string> }) {
-  const [tab, setTab] = useState<'sql' | 'python' | 'yaml'>('python');
+  const [tab, setTab] = useState<'sql' | 'python' | 'yaml' | 'contract'>('python');
   const [error, setError] = useState('');
   const mapping = buildMapping(cards, profiles);
   const approved = mapping.joins.filter((j) => j.status === 'approved');
-  const code = { sql: emitSqlScript(mapping), python: emitPython(mapping), yaml: toYaml(mapping) };
-  const names = { sql: 'join.sql', python: 'join_pandas.py', yaml: 'mapping.yml' };
+  const findings = Object.fromEntries(cards.filter((c) => c.receipt).map((c) => [c.id, { left: c.receipt!.patternsLeft, right: c.receipt!.patternsRight }]));
+  const code = { sql: emitSqlScript(mapping), python: emitPython(mapping), yaml: toYaml(mapping), contract: contractYaml(mapping, profiles, findings) };
+  const names = { sql: 'join.sql', python: 'join_pandas.py', yaml: 'mapping.yml', contract: 'contract.yml' };
 
   const joinedCsv = async (id: string) => {
     setError('');
@@ -64,16 +65,17 @@ export function ExportPanel({ cards, profiles, db, copies }: { cards: Card[]; pr
             <button onClick={() => download('join.sql', code.sql, 'text/plain')}>Download join.sql</button>
             <button onClick={() => download('join_pandas.py', code.python, 'text/x-python')}>Download join_pandas.py</button>
             <button onClick={() => download('mapping.yml', code.yaml, 'text/yaml')}>Download mapping.yml</button>
+            <button onClick={() => download('contract.yml', code.contract, 'text/yaml')}>Download contract.yml</button>
             {profiles.filter((p) => p.readFrom && copies.has(p.readFrom)).map((p) => (
               <button key={p.table} onClick={() => download(p.readFrom!, copies.get(p.readFrom!)!, 'text/csv')}>Download {p.readFrom}</button>
             ))}
           </div>
           {profiles.some((p) => p.readFrom) && <p className="hint small">The scripts read your Excel files through these CSV copies, so they get exactly the rows the receipts counted. Save them next to the scripts.</p>}
           {error && <p className="warn" role="alert">{error}</p>}
-          <p className="hint small">Or read it here first. mapping.yml is the decision file: every key, cleanup and approval, so the same join runs the same way next time.</p>
+          <p className="hint small">Or read it here first. mapping.yml is the decision file: every key, cleanup and approval, so the same join runs the same way next time. contract.yml says the same thing as an Open Data Contract (ODCS 3.2), for tools that check data contracts.</p>
           <div className="code-bar">
           <div className="tabs" role="tablist" aria-label="Generated code">
-            {(['python', 'sql', 'yaml'] as const).map((t) => (
+            {(['python', 'sql', 'yaml', 'contract'] as const).map((t) => (
               <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'is-on' : ''} onClick={() => setTab(t)}>{names[t]}</button>
             ))}
           </div>
