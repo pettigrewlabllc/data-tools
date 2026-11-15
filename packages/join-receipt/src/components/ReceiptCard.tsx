@@ -20,6 +20,12 @@ export interface Card {
   drafts: Draft[];
 }
 
+/** What an empty key after cleanup means: a lookup with no entry, or a value a cast couldn't convert. */
+function emptyAfter(plan: Plan, side: 'left' | 'right'): string {
+  const ts = (side === 'left' ? plan.join.left : plan.join.right).transforms;
+  return ts.some((t) => t.op === 'crosswalk') ? '(no match in lookup)' : "(didn't convert)";
+}
+
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const pct = (x: number) => (x > 0 && x < 0.001 ? '<0.1%' : `${(Math.round(x * 1000) / 10).toString()}%`);
 
@@ -193,7 +199,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
           <caption>Before and after the cleanup</caption>
           <thead><tr><th scope="col">File</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
           <tbody>
-            {r.samples.map((s, i) => <tr key={i}><td>{s.side === 'left' ? lfile : rfile}</td><td><code>{s.raw}</code></td><td><code>{s.transformed ?? '(no match in lookup)'}</code></td></tr>)}
+            {r.samples.map((s, i) => <tr key={i}><td>{s.side === 'left' ? lfile : rfile}</td><td><code>{s.raw}</code></td><td><code>{s.transformed ?? emptyAfter(plan, s.side)}</code></td></tr>)}
           </tbody>
         </table>
       )}

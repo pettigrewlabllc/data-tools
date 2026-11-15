@@ -171,4 +171,6 @@ test('values a cast cannot convert are counted on the receipt', async ({ page })
   await c.getByLabel(/^Add a cleanup step to stores/).selectOption({ label: 'read as a number' });
   await expect(c.locator('.collision')).toContainText('2 orders.csv zip values didn\'t convert to a whole number, like "n/a"');
   await expect(c.locator('.paper')).toContainText('4 of 6 orders.csv rows');
+  await expect(c.locator('.samples')).toContainText("(didn't convert)");
+  await expect(c.locator('.samples')).not.toContainText('lookup');
 });
