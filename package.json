@@ -12,7 +12,9 @@
     "accuracy:real": "tsx fixtures/join-receipt/real-accuracy.ts",
     "fixtures": "tsx fixtures/join-receipt/generate.ts",
     "dev": "npm run dev -w join-receipt",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "accuracy:valentine": "tsx fixtures/join-receipt/valentine/run.ts",
+    "accuracy:valentine:label": "tsx fixtures/join-receipt/valentine/label.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
