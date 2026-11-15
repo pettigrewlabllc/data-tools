@@ -140,3 +140,17 @@ test('you can join on columns the search did not propose', async ({ page }) => {
   await expect(c.locator('.paper')).toContainText('3 of 4 teams.csv rows');
   await expect(c.locator('.paper')).toContainText('For example: Heat');
 });
+
+test('a case cleanup that merges different keys is called out on the receipt', async ({ page }) => {
+  await page.goto('/');
+  const left = 'sku,price\nAB-100,5\nab-100,7\nCD-200,9\nEF-300,4\nGH-400,3\n';
+  const right = 'sku,stock\nab-100,1\ncd-200,2\nef-300,3\ngh-400,4\n';
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'prices.csv', mimeType: 'text/csv', buffer: Buffer.from(left) },
+    { name: 'stock.csv', mimeType: 'text/csv', buffer: Buffer.from(right) },
+  ]);
+  const c = page.locator('.card.receipt').first();
+  await expect(c.locator('.paper')).toBeVisible({ timeout: 60_000 });
+  await expect(c.locator('.collision')).toContainText('The cleanup turned 2 different prices.csv sku values into 1 key');
+  await expect(c.locator('.collision')).toContainText('"AB-100" and "ab-100" both became "ab-100"');
+});
