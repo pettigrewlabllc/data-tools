@@ -1,0 +1,66 @@
+[
+  {
+    "file": "usgs-quakes.json",
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson",
+    "licence": "Public domain (U.S. Geological Survey)",
+    "note": "GeoJSON; epoch milliseconds in properties.time",
+    "downloaded": "2026-11-15",
+    "bytes": 82605
+  },
+  {
+    "file": "nobel-prizes.json",
+    "url": "https://api.nobelprize.org/2.1/nobelPrizes?limit=30&nobelPrizeYear=2019&yearTo=2024",
+    "licence": "CC0 (Nobel Prize Outreach, api.nobelprize.org terms)",
+    "note": "Line items: laureates[]",
+    "downloaded": "2026-11-15",
+    "bytes": 43259
+  },
+  {
+    "file": "openalex-works.json",
+    "url": "https://api.openalex.org/works?filter=publication_year:2024,type:article&per_page=30&select=id,doi,title,publication_year,publication_date,cited_by_count,authorships,open_access,language,type,biblio",
+    "licence": "CC0 (OpenAlex)",
+    "note": "Line items: authorships[]; affiliations dropped at download to keep the file small",
+    "downloaded": "2026-11-15",
+    "bytes": 371619
+  },
+  {
+    "file": "nws-forecast.json",
+    "url": "https://api.weather.gov/gridpoints/TOP/31,80/forecast",
+    "licence": "Public domain (U.S. National Weather Service)",
+    "note": "GeoJSON; periods[] under properties",
+    "downloaded": "2026-11-15",
+    "bytes": 13317
+  },
+  {
+    "file": "fec-candidates.json",
+    "url": "https://api.open.fec.gov/v1/candidates/?api_key=DEMO_KEY&per_page=30&sort=name&election_year=2024&office=S",
+    "licence": "Public domain (U.S. Federal Election Commission)",
+    "note": "Uses the public DEMO_KEY",
+    "downloaded": "2026-11-15",
+    "bytes": 18352
+  },
+  {
+    "file": "synthetic-orders-prices.json",
+    "url": "fixtures/synthetic.ts",
+    "licence": "MIT (generated for this repo)",
+    "note": "Synthetic: generated, not from a real API"
+  },
+  {
+    "file": "synthetic-orders-cents.json",
+    "url": "fixtures/synthetic.ts",
+    "licence": "MIT (generated for this repo)",
+    "note": "Synthetic: generated, not from a real API"
+  },
+  {
+    "file": "synthetic-orders-drift.ndjson",
+    "url": "fixtures/synthetic.ts",
+    "licence": "MIT (generated for this repo)",
+    "note": "Synthetic: generated, not from a real API"
+  },
+  {
+    "file": "synthetic-accounts-bigint.json",
+    "url": "fixtures/synthetic.ts",
+    "licence": "MIT (generated for this repo)",
+    "note": "Synthetic: generated, not from a real API"
+  }
+]

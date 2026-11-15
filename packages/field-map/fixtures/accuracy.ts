@@ -1,0 +1,101 @@
+/**
+ * Scores the labelled tasks (PRD §10) and writes accuracy.json. CI regenerates it and fails if it changed, so
+ * the numbers in the README are always the ones the code produces.
+ *
+ * Denominator: every labelled target field, including the ones whose right answer is "no good source".
+ * Confident = no question and a proposal at or above T. A "no source" label is right when the tool says
+ * nothing fits, wrong when it proposes something confidently.
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { loadText } from '../src/engine/json';
+import { profileRecords } from '../src/engine/profile';
+import { recommend, G, T } from '../src/engine/recommend';
+import { targetFromColumns, targetFromExample, targetFromSchema, type Target } from '../src/engine/target';
+import { TASKS, type Task } from './tasks';
+
+type Kind = 'schema' | 'example' | 'columns';
+
+/** An example record a person might paste, made from the schema: one plausible value per field. */
+export function exampleFrom(schema: Record<string, any>): unknown {
+  const v = (s: Record<string, any>): unknown => {
+    const type = Array.isArray(s.type) ? s.type.find((t: string) => t !== 'null') : s.type;
+    if (s.enum) return s.enum[0];
+    if (type === 'object') return Object.fromEntries(Object.entries(s.properties ?? {}).map(([k, x]) => [k, v(x as Record<string, any>)]));
+    if (type === 'array') return [v(s.items ?? {})];
+    if (type === 'integer') return 3;
+    if (type === 'number') return 12.5;
+    if (type === 'boolean') return true;
+    if (s.format === 'email') return 'someone@example.com';
+    if (s.format === 'date') return '2026-01-02';
+    if (s.format === 'date-time') return '2026-01-02T03:04:05Z';
+    if (s.format === 'uri') return 'https://example.com/a';
+    return 'text';
+  };
+  return v(schema);
+}
+
+export function targetFor(task: Task, kind: Kind): Target {
+  const schema = targetFromSchema(JSON.stringify(task.schema));
+  if (kind === 'schema') return schema;
+  if (kind === 'example') return targetFromExample(JSON.stringify(exampleFrom(task.schema)));
+  return targetFromColumns(schema.fields.map((f) => f.id).join('\n'));
+}
+
+export interface FieldResult { task: string; field: string; label: string | null; status: string; proposed: string | null; top: string | null; score: number | null; right: boolean; firstRight: boolean }
+
+export async function scoreTask(task: Task, kind: Kind): Promise<FieldResult[]> {
+  const text = readFileSync(join(import.meta.dirname, 'samples', task.sample), 'utf8');
+  const file = loadText(task.sample, text, task.recordRoot);
+  const profile = profileRecords(file.records, file.bigIntPaths);
+  const rec = await recommend(targetFor(task, kind), profile, file.records);
+  return Object.entries(task.labels).map(([field, label]) => {
+    const r = rec.fields.find((x) => x.field.id === field);
+    if (!r) throw new Error(`${task.id}: no target field ${field} under ${kind}`);
+    const top = r.candidates[0]?.sourceId ?? null;
+    const proposed = r.status === 'confident' ? r.chosen!.sourceId : null;
+    const right = label === null ? r.status === 'no_source' : r.status === 'confident' && proposed === label;
+    const firstRight = label === null ? r.status === 'no_source' : top === label && r.status !== 'no_source';
+    return { task: task.id, field, label, status: r.status, proposed, top, score: r.candidates[0]?.score ?? null, right, firstRight };
+  });
+}
+
+function summarise(rows: FieldResult[]) {
+  const confident = rows.filter((r) => r.status === 'confident' || (r.label === null && r.status === 'no_source'));
+  const confidentRight = confident.filter((r) => r.right);
+  const pct = (n: number, d: number) => (d ? Math.round((1000 * n) / d) / 10 : null);
+  return {
+    fields: rows.length,
+    confident: confident.length,
+    confident_right: confidentRight.length,
+    confident_precision_pct: pct(confidentRight.length, confident.length),
+    coverage_pct: pct(confident.length, rows.length),
+    questions: rows.filter((r) => r.status === 'question').length,
+    questions_per_field: rows.length ? Math.round((100 * rows.filter((r) => r.status === 'question').length) / rows.length) / 100 : null,
+    no_source_called: rows.filter((r) => r.status === 'no_source').length,
+    first_ranked_right_pct: pct(rows.filter((r) => r.firstRight).length, rows.length),
+  };
+}
+
+async function main() {
+  const kinds: Kind[] = ['schema', 'example', 'columns'];
+  const byKind: Record<string, ReturnType<typeof summarise>> = {};
+  const misses: Record<string, FieldResult[]> = {};
+  for (const kind of kinds) {
+    const rows: FieldResult[] = [];
+    for (const t of TASKS.filter((x) => !x.kinds || x.kinds.includes(kind))) rows.push(...(await scoreTask(t, kind)));
+    byKind[kind] = summarise(rows);
+    misses[kind] = rows.filter((r) => !r.right);
+  }
+  const out = {
+    note: 'Generated by fixtures/accuracy.ts. First-run numbers, thresholds frozen before scoring (T and G below). No held-out set yet.',
+    thresholds: { T, G },
+    tasks: TASKS.length,
+    by_target_kind: byKind,
+    not_confident_or_wrong: Object.fromEntries(Object.entries(misses).map(([k, rows]) => [k, rows.map((r) => `${r.task} ${r.field}: label ${r.label ?? 'none'}, ${r.status}${r.top ? ` (top ${r.top} ${r.score})` : ''}`)])),
+  };
+  writeFileSync(join(import.meta.dirname, 'accuracy.json'), JSON.stringify(out, null, 2) + '\n');
+  for (const k of kinds) console.log(k.padEnd(8), JSON.stringify(byKind[k]));
+}
+
+if (process.argv[1]?.endsWith('accuracy.ts')) await main();

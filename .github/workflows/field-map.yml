@@ -1,0 +1,31 @@
+name: field-map
+on:
+  push:
+    branches: [main]
+    paths: ['packages/field-map/**', '.github/workflows/field-map.yml']
+  pull_request:
+    paths: ['packages/field-map/**', '.github/workflows/field-map.yml']
+defaults:
+  run:
+    working-directory: packages/field-map
+jobs:
+  field-map:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: packages/field-map/package-lock.json }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pandas
+      - run: npm ci
+      - run: npm run typecheck
+      - run: FM_PYTHON=$(which python) npm test
+      - run: npm run accuracy
+      - run: git diff --exit-code fixtures/accuracy.json
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium webkit firefox
+      - run: npx playwright test
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: field-map-playwright-report, path: packages/field-map/playwright-report, retention-days: 7 }
