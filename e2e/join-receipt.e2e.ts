@@ -174,3 +174,17 @@ test('values a cast cannot convert are counted on the receipt', async ({ page })
   await expect(c.locator('.samples')).toContainText("(didn't convert)");
   await expect(c.locator('.samples')).not.toContainText('lookup');
 });
+
+test('the score opens into its parts, and they add up to it', async ({ page }) => {
+  await page.goto('/?sample=1');
+  await settled(page, 3);
+  const ak = card(page, 'counties.csv.fips = unemployment_2024.csv.county_fips');
+  await ak.getByText('How 91 adds up').click();
+  const parts = ak.locator('.score-parts');
+  await expect(parts).toContainText('Keys found in the other file');
+  await expect(parts).toContainText('One cleanup step needed');
+  await expect(parts.locator('.minus .sp-n')).toHaveText(['−2']);
+  const nums = (await parts.locator('.sp-n').allTextContents()).map((t) => Number(t.replace('−', '-')));
+  expect(nums.reduce((a, b) => a + b, 0)).toBe(91);
+  await expect(parts.locator('.sp-total')).toHaveText(/Total\s*91/);
+});

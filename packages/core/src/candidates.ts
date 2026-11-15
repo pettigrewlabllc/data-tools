@@ -4,9 +4,9 @@ import type { ColumnProfile, TableProfile } from './profile';
 import { formatFamily, joinable, type FormatClass } from './formats';
 import { ident } from './sql/quote';
 import { keyExpr, compositeKeyExpr, crosswalkCtes, withClause } from './sql/emit';
-import { nameSimilarity, scoreCandidate, type Features } from './score';
+import { nameSimilarity, scoreCandidate, type Features, type ScorePart } from './score';
 
-export interface JoinCandidate { left: KeyRef; right: KeyRef; also?: KeyPair[]; features: Features; score: number; reason: string }
+export interface JoinCandidate { left: KeyRef; right: KeyRef; also?: KeyPair[]; features: Features; score: number; reason: string; parts?: ScorePart[]; capped?: boolean }
 export interface PairResult { left: string; right: string; best: JoinCandidate[]; reliable: boolean }
 export interface CandidateResult { pairs: PairResult[] }
 
@@ -92,8 +92,8 @@ export async function scorePair(db: Db, lp: TableProfile, rp: TableProfile, lc: 
     leftNearUnique: chain.left.length ? null : lc.nearUnique ?? null,
     rightNearUnique: chain.right.length ? null : rc.nearUnique ?? null,
   };
-  const { score, reason } = scoreCandidate(features, left, right);
-  return { left, right, features, score, reason };
+  const { score, reason, parts, capped } = scoreCandidate(features, left, right);
+  return { left, right, features, score, reason, parts, capped };
 }
 
 /**
@@ -211,8 +211,8 @@ async function compositeCandidate(db: Db, lp: TableProfile, rp: TableProfile, fo
         minDistinct: Math.min(base.features.minDistinct, lo.distinct, ro.distinct),
       };
       if (!features.leftUnique && !features.rightUnique) continue;
-      const { score, reason } = scoreCandidate(features, base.left, base.right, also);
-      if (score > base.score) options.push({ left: base.left, right: base.right, also, features, score, reason });
+      const { score, reason, parts, capped } = scoreCandidate(features, base.left, base.right, also);
+      if (score > base.score) options.push({ left: base.left, right: base.right, also, features, score, reason, parts, capped });
     }
   }
   options.sort((a, b) => b.score - a.score);
