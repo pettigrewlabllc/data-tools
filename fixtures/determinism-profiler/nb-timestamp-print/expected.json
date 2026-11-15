@@ -1,0 +1,19 @@
+{
+  "input": "analysis.ipynb",
+  "origins": [],
+  "inherited": [],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "cell 3:3",
+      "cause": "timestamp",
+      "status": "latent"
+    },
+    {
+      "at": "cell 4:2",
+      "cause": "timestamp",
+      "status": "latent"
+    }
+  ],
+  "score": 100
+}

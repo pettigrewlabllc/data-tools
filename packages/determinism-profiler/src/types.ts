@@ -41,6 +41,8 @@ export interface TraceStep {
   status: 'ok' | 'error' | 'not_run';
   error?: string;
   judgment?: boolean;
+  /** Mask name → how many times it replaced something in this step's printed output. */
+  masked?: Record<string, number>;
 }
 
 export interface Trace {
@@ -74,6 +76,8 @@ export interface StepResult {
   rows: number[];
   findings: Finding[];
   duration_ms: number[];
+  /** Mask name → most replacements in any one run. */
+  masked?: Record<string, number>;
 }
 
 export interface Report {

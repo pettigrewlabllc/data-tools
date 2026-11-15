@@ -66,4 +66,10 @@ write("nb-functions", [
     "def pick(n):\n    return orders.sample(n)",
     "picked = pick(3)\nprint(picked.order_id.tolist())",
 ])
+write("nb-timestamp-print", [
+    LOAD,
+    "total = orders['amount'].sum()",
+    "# A log line: the answer is the same every run, the clock isn't.\nfrom datetime import datetime\nprint(f'{datetime.now().isoformat()} INFO total={total:.2f}')",
+    "import time\nprint(f'counted {len(orders)} orders in {time.perf_counter() % 1:.6f}s')",
+])
 print("ok")

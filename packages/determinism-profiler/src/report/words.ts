@@ -85,4 +85,28 @@ export function findingLine(f: Finding): string {
   return `${where(f)}  ${causeText(f)}`;
 }
 
+const MASK_PLURAL: Record<string, string> = { timestamp: 'timestamps', duration: 'durations', 'progress bar': 'progress bars', 'memory address': 'memory addresses' };
+
+/** "Ignored in printed output: 1 timestamp, 2 durations." Shown on every step that had anything masked. */
+export function maskLine(masked: Record<string, number> | undefined): string {
+  const parts = Object.entries(masked ?? {}).map(([name, n]) =>
+    name in MASK_PLURAL ? `${n} ${n === 1 ? name : MASK_PLURAL[name]}` : `${name} (${n})`);
+  return parts.length ? `Ignored in printed output: ${parts.join(', ')}.` : '';
+}
+
+export const MASK_NOTE = 'Printed output is compared with timestamps, durations and progress bars masked out. Each step says what it masked. Turn this off with --no-default-masks.';
+
 export const NO_CAUSE = "No known cause found in the code. Check what it reads that isn't a file or a table (an API, the clock, a global setting).";
+
+/** --show-changed-rows. Terminal only: these lines carry key values, so they never reach a file. */
+export const CHANGED_ROWS = {
+  title: 'Changed rows',
+  lede: 'Key values whose rows differ between two runs, up to 10 per step. They print here and nowhere else, so the report and traces still hold no data.',
+  head: (label: string, key: string, a: number, b: number) => `${label} · keyed by ${key} · run ${a} vs run ${b}`,
+  change: { only_a: (a: number) => `only in run ${a}`, only_b: (b: number) => `only in run ${b}`, changed: () => 'different values' },
+  more: 'More rows differ. These are the first 10 found.',
+  noKey: "No single column is unique and never empty, so there's no key to list rows by.",
+  notKept: "Couldn't keep a copy of this step's output, so its rows can't be listed.",
+  none: 'Nothing changed that has rows to list.',
+  notSupported: '--show-changed-rows works on SQL and dbt steps. A notebook variable has no key to list rows by.',
+};

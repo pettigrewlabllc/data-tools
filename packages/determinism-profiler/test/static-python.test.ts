@@ -33,3 +33,11 @@ describe('Python cell checks', () => {
     expect(causes("# df.sample(5)\nlabel = 'datetime.now()'")).toEqual([]);
   });
 });
+
+describe('f-strings', () => {
+  it('checks the code inside {…} and ignores the text around it', () => {
+    expect(causes("print(f'{datetime.now().isoformat()} INFO total={total}')")).toEqual(['timestamp@1']);
+    expect(causes("print(f'datetime.now() is just text here, {{not code}}')")).toEqual([]);
+    expect(causes("print(f'took {time.perf_counter() - t0:.2f}s')")).toEqual(['timestamp@1']);
+  });
+});

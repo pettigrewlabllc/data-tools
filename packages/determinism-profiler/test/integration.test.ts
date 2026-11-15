@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -43,6 +43,54 @@ describe('traces and reports hold no data values (D1)', () => {
   it.skipIf(!DBT)('dbt project with a canary in a seed', async () => {
     const { hits } = await runAndScan(join(FIX, 'dbt-duckdb'));
     expect(hits).toEqual([]);
+  });
+});
+
+describe('--show-changed-rows keeps key values out of every file (D1)', () => {
+  it('SQL: the canary key prints to the terminal and appears in no trace or report', async () => {
+    const out = mkdtempSync(join(tmpdir(), 'dp-cr-'));
+    const r = spawnSync(process.execPath, ['--import', 'tsx', join(PKG, 'src/cli.ts'), join(FIX, 'sql-changed-rows'), '--show-changed-rows', '--fail-on', 'never', '--out', out], { encoding: 'utf8', cwd: PKG });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('keyed by customer');
+    expect(r.stdout).toContain('CANARY_7f3a: different values');
+    expect(r.stdout).toContain("there's no key to list rows by");
+    expect(scanOut(out)).toEqual([]);
+  });
+  it('the profile result carries the rows; writeOutputs never sees them', async () => {
+    const { report, traces, changedRows } = await profile(join(FIX, 'sql-changed-rows'), { runs: 2, showChangedRows: true });
+    expect(JSON.stringify(changedRows)).toContain('CANARY_7f3a');
+    const out = mkdtempSync(join(tmpdir(), 'dp-cr2-'));
+    writeOutputs(out, report, traces);
+    expect(scanOut(out)).toEqual([]);
+    expect(traces[0].params.show_changed_rows).toBe(true);
+  });
+  it.skipIf(!DBT)('dbt: changed keys print, files stay clean', async () => {
+    const { report, traces, changedRows } = await profile(join(FIX, 'dbt-duckdb'), { runs: 2, dbt: DBT, showChangedRows: true });
+    const listed = (changedRows as { key?: string }[]).filter((x) => x.key);
+    expect(listed.map((x) => x.key)).toContain('order_id');
+    const out = mkdtempSync(join(tmpdir(), 'dp-cr3-'));
+    writeOutputs(out, report, traces);
+    expect(scanOut(out)).toEqual([]);
+  });
+});
+
+describe('notebook masks (volatile printed output)', () => {
+  it.skipIf(!JUPYTER)('a printed timestamp is "same" with masks and "values" without, and the mask is counted', async () => {
+    const nb = join(FIX, 'nb-timestamp-print/analysis.ipynb');
+    const masked = await profile(nb, { runs: 2, jupyter: JUPYTER });
+    const cell3 = masked.report.steps.find((s) => s.step_id === 'cell-3')!;
+    expect(cell3.verdict).toBe('same');
+    expect(cell3.masked).toEqual({ timestamp: 1 });
+    expect(renderMarkdown(masked.report)).toContain('Ignored in printed output: 1 timestamp.');
+    const raw = await profile(nb, { runs: 2, jupyter: JUPYTER, defaultMasks: false });
+    expect(raw.report.steps.find((s) => s.step_id === 'cell-3')!.verdict).toBe('values');
+  });
+  it.skipIf(!JUPYTER)('a --sanitize file adds its own masks', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dp-san-'));
+    const file = join(dir, 'sanitize.cfg');
+    writeFileSync(file, '[total line]\nregex: total=[0-9.]+\nreplace: total=X\n');
+    const r = await profile(join(FIX, 'nb-timestamp-print/analysis.ipynb'), { runs: 2, jupyter: JUPYTER, sanitize: file });
+    expect(r.report.steps.find((s) => s.step_id === 'cell-3')!.masked).toEqual({ timestamp: 1, 'total line': 1 });
   });
 });
 

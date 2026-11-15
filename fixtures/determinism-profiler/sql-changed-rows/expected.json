@@ -1,0 +1,22 @@
+{
+  "input": ".",
+  "origins": [
+    "02_adjusted.sql:2",
+    "03_regions.sql:2"
+  ],
+  "inherited": [],
+  "inconclusive": [],
+  "findings": [
+    {
+      "at": "02_adjusted.sql:4",
+      "cause": "random",
+      "status": "confirmed"
+    },
+    {
+      "at": "03_regions.sql:3",
+      "cause": "random",
+      "status": "confirmed"
+    }
+  ],
+  "score": 33.3
+}

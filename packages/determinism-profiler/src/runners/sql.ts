@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { Fingerprinter, bytesFingerprint, identity, sourceHash, type Fingerprint } from '../fingerprint.js';
 import { fingerprintInDuckDB, fingerprintQueryInDuckDB } from '../fingerprint-sql.js';
+import { keptRun, type KeptRun } from '../changed-rows.js';
 import { checkStatement, referencesOf, shapeOf, splitStatements, type Statement, type StatementShape } from '../static/sql.js';
 import type { Finding, TraceStep } from '../types.js';
 
@@ -118,9 +119,11 @@ async function fingerprintQuery(conn: DuckDBConnection, sql: string, orderMatter
 const q = (name: string) => '"' + name.replaceAll('"', '""') + '"';
 
 /** One run: fresh in-memory DuckDB, every statement in order, steps fingerprinted. */
-export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Promise<TraceStep[]> {
+export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null, keep = false): Promise<{ steps: TraceStep[]; kept?: KeptRun }> {
   const instance = await DuckDBInstance.create(':memory:');
   const conn = await instance.connect();
+  const kept = keep ? keptRun(instance, conn) : undefined;
+  let keepN = 0;
   const cwd = process.cwd();
   process.chdir(plan.root);
   const out: TraceStep[] = [];
@@ -147,12 +150,22 @@ export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Pr
       try {
         if (s.shape.kind === 'result') {
           // DuckDB-side hashing; statements that can't sit inside CREATE TABLE AS (DESCRIBE, SUMMARIZE) stream instead.
-          try { step.outputs.result = await fingerprintQueryInDuckDB(conn, s.statement.text); }
+          const keepAs = kept && s.isStep ? `__dp_keep_${++keepN}` : undefined;
+          try {
+            step.outputs.result = await fingerprintQueryInDuckDB(conn, s.statement.text, keepAs);
+            if (keepAs) kept!.tables.set(s.id, keepAs);
+          }
           catch { step.outputs.result = await fingerprintQuery(conn, s.statement.text, true); }
         } else {
           await conn.run(s.statement.text);
           if ((s.shape.kind === 'relation' || s.shape.kind === 'mutation') && s.shape.target) {
             step.outputs[s.shape.target] = await fingerprintInDuckDB(conn, q(s.shape.target), false);
+            if (kept && s.isStep) {
+              // A snapshot, since a later statement may replace or change the table.
+              const t = `__dp_keep_${++keepN}`;
+              await conn.run(`CREATE TEMP TABLE ${t} AS SELECT * FROM ${q(s.shape.target)}`);
+              kept.tables.set(s.id, t);
+            }
           } else if (s.shape.kind === 'copy' && s.shape.copyTo) {
             const p = resolve(plan.root, s.shape.copyTo);
             step.outputs[s.shape.copyTo] = existsSync(p) ? bytesFingerprint(readFileSync(p)) : { ...bytesFingerprint(new Uint8Array()), skipped: 'no file written' };
@@ -171,10 +184,9 @@ export async function runSqlOnce(plan: SqlPlan, include: Set<string> | null): Pr
     }
   } finally {
     process.chdir(cwd);
-    conn.closeSync();
-    instance.closeSync();
+    if (!kept) { conn.closeSync(); instance.closeSync(); }
   }
-  return out;
+  return { steps: out, kept };
 }
 
 /** Error messages can quote data ("could not convert 'x'"), so traces keep only the error's kind. */

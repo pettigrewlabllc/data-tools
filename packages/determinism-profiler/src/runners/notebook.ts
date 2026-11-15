@@ -6,6 +6,8 @@ import { Fingerprinter, sourceHash, type Fingerprint } from '../fingerprint.js';
 import { checkCell } from '../static/python.js';
 import type { Finding, TraceStep } from '../types.js';
 import { HELPER, PREFLIGHT } from './notebook-python.js';
+import { ADDRESS_MASK, DEFAULT_MASKS, applyMasks, type Mask } from '../masks.js';
+import { RAW } from '../compare.js';
 
 export class EnvError extends Error {}
 
@@ -182,8 +184,8 @@ function instrument(plan: NbPlan, logPath: string): Nb {
   return nb;
 }
 
-/** The display output of a user cell: stdout and text results, addresses masked, stderr left out. */
-function displayFingerprint(outputs: NbOutput[]): { fp: Fingerprint; error?: string } {
+/** The display output of a user cell: stdout and text results, volatile bits masked (and counted), stderr left out. */
+function displayFingerprint(outputs: NbOutput[], masks: Mask[]): { fp: Fingerprint; raw?: Fingerprint; error?: string; masked: Record<string, number> } {
   const lines: string[] = [];
   let skipped = 0;
   let error: string | undefined;
@@ -201,10 +203,13 @@ function displayFingerprint(outputs: NbOutput[]): { fp: Fingerprint; error?: str
     }
   }
   const fp = new Fingerprinter(['line'], true);
-  for (const l of lines) fp.addRow([l.replace(/ at 0x[0-9a-fA-F]+/g, ' at 0x?')]);
+  const masked: Record<string, number> = {};
+  const raw = new Fingerprinter(['line'], true);
+  for (const l of lines) { fp.addRow([applyMasks(l, masks, masked)]); raw.addRow([l]); }
   const out = fp.finish();
   if (!lines.length && skipped) out.skipped = 'image or widget output';
-  return { fp: out, error };
+  // Keep the unmasked one too when masking changed anything, so compare can use it for steps whose inputs moved.
+  return { fp: out, raw: Object.keys(masked).length ? raw.finish() : undefined, error, masked };
 }
 
 interface LogRec { cell: number; phase: 'pre' | 'post'; t: number; vars: Record<string, Fingerprint>; files: Record<string, string | null> }
@@ -214,7 +219,7 @@ const fileFp = (digest: string | null): Fingerprint =>
     ? { rows: 1, ordered: digest, unordered: digest, rounded: digest, columns: {}, order_matters: false }
     : { rows: 0, ordered: '', unordered: '', rounded: '', columns: {}, order_matters: false, skipped: 'file not there' };
 
-export interface NbRunOptions { jupyter: string; kernel?: string; timeoutSec?: number }
+export interface NbRunOptions { jupyter: string; kernel?: string; timeoutSec?: number; masks?: Mask[] }
 
 /** One run: fresh kernel via the user's nbconvert, then read the log and the executed copy. */
 export function runNotebookOnce(plan: NbPlan, opts: NbRunOptions): { steps: TraceStep[]; notes: string[] } {
@@ -266,8 +271,9 @@ export function runNotebookOnce(plan: NbPlan, opts: NbRunOptions): { steps: Trac
         outputs[k] = v;
       }
       for (const [p, d] of Object.entries(b?.files ?? {})) outputs[`file:${p}`] = fileFp(d);
-      const disp = displayFingerprint(displays.get(c.n) ?? []);
+      const disp = displayFingerprint(displays.get(c.n) ?? [], opts.masks ?? [ADDRESS_MASK, ...DEFAULT_MASKS]);
       if (disp.fp.rows > 0 || disp.fp.skipped) outputs.display = disp.fp;
+      if (disp.raw) outputs[RAW] = disp.raw;
       steps.push({
         step_id: c.id,
         kind: 'cell',
@@ -281,6 +287,7 @@ export function runNotebookOnce(plan: NbPlan, opts: NbRunOptions): { steps: Trac
         status: disp.error ? 'error' : a && b ? 'ok' : 'not_run',
         error: disp.error,
         judgment: c.judgment,
+        ...(Object.keys(disp.masked).length ? { masked: disp.masked } : {}),
       });
     }
     return { steps, notes: [] };
