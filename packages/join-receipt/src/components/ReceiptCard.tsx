@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  describePattern, describeCollision, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
+  describePattern, describeCollision, describeCastFailure, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
   type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
 } from '@data-tools/core';
 import type { AiState } from './AiPanel';
@@ -178,6 +178,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
           <div><dt>Cleanup</dt><dd>{r.normalisations[0].toUpperCase() + r.normalisations.slice(1)} took the match rate from {pct(r.matchRateBefore ?? 0)} to {pct(r.matchRateAfter)}.</dd></div>
         )}
       </dl>
+      {r.castFailures.map((c, i) => <p key={`cast-${i}`} className="collision" role="note">{describeCastFailure(c, c.side === 'left' ? lfile : rfile)}</p>)}
       {r.collisions.map((c, i) => <p key={`col-${i}`} className="collision" role="note">{describeCollision(c, c.side === 'left' ? lfile : rfile)}</p>)}
       {r.fanoutWarning && (
         <div className="fanout" role="note">

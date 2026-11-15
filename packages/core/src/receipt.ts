@@ -2,13 +2,15 @@ import type { Db } from './db';
 import { sideRefs, type Aggregate, type AggFn, type JoinOn } from './grammar';
 import type { TableProfile } from './profile';
 import { ident } from './sql/quote';
-import { keyExpr } from './sql/emit';
+import { keyExpr, transformSql } from './sql/emit';
 import { formatFamily } from './formats';
 import { joinParts, withCtes, type Plan } from './joinsql';
 import { describeTransforms } from './score';
 
 export interface Pattern { column: string; value: string; unmatchedCount: number; unmatchedTotal: number; overallShare: number; lift: number }
 export interface TransformSample { side: 'left' | 'right'; raw: string; transformed: string | null }
+/** Rows whose key value a cast step couldn't convert (TRY_CAST gave NULL), so they can't match. */
+export interface CastFailure { side: 'left' | 'right'; table: string; column: string; to: 'integer' | 'date'; rows: number; example: string }
 /** Distinct raw key values that a case or space cleanup turned into the same key, on one side. */
 export interface Collision { side: 'left' | 'right'; table: string; column: string; keys: number; values: number; example: [string, string]; becomes: string }
 
@@ -20,6 +22,7 @@ export interface Receipt {
   patternsLeft: Pattern[]; patternsRight: Pattern[];
   samples: TransformSample[];
   collisions: Collision[];
+  castFailures: CastFailure[];
   normalisations: string;
   proposedAggregate: Aggregate | null;
   sql: string;
@@ -89,6 +92,20 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     }
   }
 
+  // A cast step uses TRY_CAST, so a value it can't convert becomes NULL instead of stopping the join. Count them.
+  const castFailures: CastFailure[] = [];
+  for (const side of ['left', 'right'] as const) for (const ref of sideRefs(plan.join, side)) {
+    const alias = side === 'left' ? 'l' : 'r', src = side === 'left' ? 'L' : 'R';
+    let x = `${alias}.${ident(ref.column)}`;
+    for (const t of ref.transforms) {
+      const before = x;
+      x = transformSql(x, t);
+      if (t.op !== 'cast' || t.to === 'varchar') continue;
+      const [f] = await q(`SELECT count(*) AS rows, min(CAST(${before} AS VARCHAR)) AS ex FROM ${src} AS ${alias} WHERE ${before} IS NOT NULL AND ${x} IS NULL`);
+      if (n(f.rows) > 0) castFailures.push({ side, table: ref.table, column: ref.column, to: t.to, rows: n(f.rows), example: String(f.ex) });
+    }
+  }
+
   const keyCols = (side: 'left' | 'right') => sideRefs(plan.join, side).map((k) => k.column);
   // With a one-column key, the key can't explain its own drops. With several, the other parts can (State FIPS = 72).
   const patternSkip = (side: 'left' | 'right') => (plan.join.also?.length ? [] : keyCols(side));
@@ -105,7 +122,7 @@ export async function buildReceipt(db: Db, profiles: TableProfile[], plan: Plan)
     matchedLeft, unmatchedLeft: leftRows - matchedLeft, matchedRight: n(c.matched_right), unmatchedRight,
     matchRateBefore, matchRateAfter: leftRows ? matchedLeft / leftRows : 0,
     fanout, maxPerKeyLeft: n(c.max_left), maxPerKeyRight, fanoutWarning,
-    patternsLeft, patternsRight, samples, collisions,
+    patternsLeft, patternsRight, samples, collisions, castFailures,
     normalisations: describeTransforms(allRefs.flatMap((k) => k.transforms)),
     proposedAggregate,
     sql: withCtes(p.ctes, p.select),
@@ -151,6 +168,12 @@ const pct = (x: number) => (x < 0.01 && x > 0 ? '<1%' : `${Math.round(x * 100)}%
 export function describePattern(pt: Pattern): string {
   const who = pt.unmatchedCount === pt.unmatchedTotal ? `All ${pt.unmatchedTotal} unmatched rows` : `${pt.unmatchedCount} of ${pt.unmatchedTotal} unmatched rows`;
   return `${who} have ${pt.column} = ${pt.value} (${pt.value} is ${pct(pt.overallShare)} of the file).`;
+}
+
+/** "2 l.csv zip values didn't convert to a whole number, like "n/a". Those rows have no key, so they can't match." */
+export function describeCastFailure(c: CastFailure, file: string): string {
+  const what = c.to === 'integer' ? 'a whole number' : 'a date';
+  return `${c.rows} ${file} ${c.column} ${c.rows === 1 ? "value didn't" : "values didn't"} convert to ${what}, like "${c.example}". Those rows have no key, so they can't match.`;
 }
 
 /** "The cleanup turned 4 different l.csv code values into 2 keys, so rows that were distinct now join as one. ..." */
