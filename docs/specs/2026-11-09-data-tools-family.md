@@ -1,8 +1,8 @@
-# Pettigrew Lab data tools: how the four fit together
+# Pettigrew Lab data tools: how the five fit together
 
 **Date:** 2026-11-09 · **Owner:** Joel · **Status:** draft
 
-Four separate tools, each with its own PRD. **Each one does its job on its own.** None needs another installed, open or run first. They can hand work to each other when someone uses more than one, but that's an option, never a dependency.
+Five separate tools, each with its own PRD. **Each one does its job on its own.** None needs another installed, open or run first. They can hand work to each other when someone uses more than one, but that's an option, never a dependency.
 
 | Tool | Its one job | Input it needs by itself | PRD |
 |---|---|---|---|
@@ -10,6 +10,7 @@ Four separate tools, each with its own PRD. **Each one does its job on its own.*
 | **Answerability Check** | Find out whether your data can answer a business question, and what's missing | Questions + files or table definitions (DDL) | `2026-11-09-answerability-check-prd.md` |
 | **PrivacyDiff** | Check whether your data does what your privacy notice says | A privacy notice + files, table definitions, SQL or a dbt project | `2026-11-09-privacydiff-prd.md` |
 | **Determinism Profiler** | Run an analysis several times and see which steps give the same answer and why the others don't | A notebook, a folder of SQL, or a dbt project | `2026-11-09-determinism-profiler-prd.md` |
+| **Field Map** (working name, added 2026-11-14) | Recommend where each field of a target shape comes from in an API's responses, ask when unsure, and catch it when the API changes | Sample JSON responses + a target shape (JSON Schema, example record or column list) | `2026-11-14-field-map-prd.md` |
 
 These replace the single combined PRD of 2026-11-08 (in git history on this branch). Inputs behind all four: `2026-11-08-join-receipt-source-brief.md` (Joel's ideas, messages and answers) and `2026-11-08-join-receipt-fable-review.md`.
 
@@ -25,12 +26,14 @@ These replace the single combined PRD of 2026-11-08 (in git history on this bran
 | PrivacyDiff's `policy.yml` → Join Receipt | Adds a privacy line to each receipt |
 | Join Receipt's `mapping.yml` → Determinism Profiler | Profiles the generated SQL like any SQL folder |
 | Determinism Profiler's learned rules → Join Receipt | Key choices people keep approving become rules |
+| Field Map's mapped records (flat CSV) → Join Receipt | Mapped API data joins like any other file |
+| PrivacyDiff's `policy.yml` → Field Map | Adds a privacy line to target fields with unlisted personal data |
 
-## Shared conventions (all four)
+## Shared conventions (all five)
 
 - **Audience.** User: a Kaggle-style analyst who doesn't use dbt (Joel's bias), with dbt users served by the same output. Reader: someone deciding whether to hire Joel, who opens the repo and should conclude "this person knows how to do stuff" within five minutes.
 - **One Node/TypeScript runtime** for web, CLI and GitHub Action. No bundled Python. DuckDB is the local scratchpad (DuckDB-Wasm in the browser, `@duckdb/node-api` in the CLI). Rationale and replacements are in each PRD's architecture section.
-- **AI proposes, SQL decides.** Models are optional (user's own key or a local model), off by default, fill closed grammars or draft files, and never produce a number. Every proposal is run and checked before anyone sees it. A payload panel shows exactly what would be sent.
+- **AI proposes, a local engine decides** (SQL in DuckDB for tables; JSONata for nested JSON in Field Map). Models are optional (user's own key or a local model), off by default, fill closed grammars or draft files, and never produce a number. Every proposal is run and checked before anyone sees it. A payload panel shows exactly what would be sent.
 - **No data leaves the machine** unless the user connects a model, and then only what the payload panel shows. No accounts, no backend, no shared label collection.
 - **Decision files are the source of truth** (`mapping.yml`, `policy.yml`, `questions.yml`, trace files), each pinned to the tool version that wrote it, so output is repeatable.
 - **Legal wording: cites the rule, never a verdict** (Joel, 2026-11-08).
@@ -47,6 +50,7 @@ packages/
   answerability-check/   web + cli
   privacydiff/           web + cli + GitHub Action
   determinism-profiler/  cli (+ report viewer)
+  field-map/             web + cli
 fixtures/<tool>/         labelled test sets per tool
 docs/adr/                decision records
 ```
@@ -61,5 +65,6 @@ docs/adr/                decision records
 | 2 | **PrivacyDiff** | Joel's signature; reuses profiling, adds PI classification and the notice check | 5–6 weeks |
 | 3 | **Determinism Profiler** | Small, CLI-only, independent of the web stack; leads to the published study | 3–4 weeks |
 | 4 | **Answerability Check** | Reuses key detection; question mapping is the new part | 3–4 weeks |
+| 5 | **Field Map** | Added 2026-11-14; reuses profiling, format classes and masking; place in the order is Joel's call (its PRD §11) | ~1.5× Join Receipt v1 |
 
 Any tool can move up; nothing in a later tool waits on an earlier tool, only on the core library pieces it uses.
