@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   describePattern, describeCollision, describeCastFailure, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
-  type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
+  type PairResult, type ScorePart, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
 } from '@data-tools/core';
 import type { AiState } from './AiPanel';
 
@@ -93,6 +93,7 @@ export function ReceiptCard({ card, profiles, ai, onPlan, onStatus, onDrafts, db
         </div>
       </header>
       <p className="reason">{cand.reason}</p>
+      {cand.parts && cand.parts.length > 0 && <ScoreParts score={cand.score} parts={cand.parts} capped={!!cand.capped} />}
       {!pair.reliable && (
         <p className="warn">
           No reliable join between these two. This is the closest near-miss, and the others are under "Change it". Check it before you approve anything.
@@ -380,5 +381,32 @@ function PickColumns({ lp, rp, onPick, label }: { lp: TableProfile; rp: TablePro
       </select>
       <button disabled={busy} onClick={() => { setBusy(true); void onPick(l, r).finally(() => setBusy(false)); }}>Use these</button>
     </div>
+  );
+}
+
+/** The score as its weighted parts: what counted for it, what counted against it, and the total. */
+function ScoreParts({ score, parts, capped }: { score: number; parts: ScorePart[]; capped: boolean }) {
+  // Round so the shown parts add up exactly to the unclamped total (largest remainder), or readers will add them up and wonder.
+  const total = Math.round(parts.reduce((a, p) => a + p.points, 0));
+  const shown = parts.map((p) => Math.floor(p.points));
+  const order = parts.map((p, i) => ({ i, r: p.points - Math.floor(p.points) })).sort((a, b) => b.r - a.r);
+  for (let k = 0; k < total - shown.reduce((a, b) => a + b, 0); k++) shown[order[k % order.length].i]++;
+  const shownById = new Map(parts.map((p, i) => [p.id, shown[i]]));
+  const pts = (p: ScorePart) => { const n = shownById.get(p.id) ?? 0; return `${n >= 0 ? '+' : '−'}${Math.abs(n)}`; };
+  const row = (p: ScorePart) => (
+    <li key={p.id} className={p.points < 0 ? 'minus' : 'plus'}>
+      <span className="sp-label">{p.label}</span>
+      <span className="sp-bar" aria-hidden="true"><span style={{ width: `${Math.min(100, (Math.abs(p.points) / 60) * 100)}%` }} /></span>
+      <span className="sp-n">{pts(p)}</span>
+    </li>
+  );
+  const plus = parts.filter((p) => p.points > 0), minus = parts.filter((p) => p.points < 0);
+  return (
+    <details className="score-parts">
+      <summary>How {score} adds up</summary>
+      <ul>{plus.map(row)}</ul>
+      {minus.length > 0 && <ul>{minus.map(row)}</ul>}
+      <p className="sp-total"><span>Total</span><span>{score}{capped ? ' (kept between 0 and 100)' : ''}</span></p>
+    </details>
   );
 }

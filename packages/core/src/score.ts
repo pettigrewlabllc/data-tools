@@ -49,19 +49,30 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
  * matching format 0.15, similar names 0.15; penalties for many-to-many, near-constant columns,
  * row numbers on both sides and each transform needed.
  */
-export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef, also: KeyPair[] = []): { score: number; reason: string } {
+/** One line of the score: what it counts and how many points it adds (or, when negative, takes away). */
+export interface ScorePart { id: 'found' | 'unique' | 'format' | 'names' | 'not-unique' | 'few-values' | 'row-numbers' | 'cleanup'; label: string; points: number }
+export const SCORE_WEIGHTS = { found: 45, unique: 25, format: 15, names: 15 } as const;
+
+export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef, also: KeyPair[] = []): { score: number; reason: string; parts: ScorePart[]; capped: boolean } {
   const contain = Math.max(f.containLeft, f.containRight);
   const near = !f.leftUnique && !f.rightUnique ? (f.rightNearUnique ? { side: right, ...f.rightNearUnique } : f.leftNearUnique ? { side: left, ...f.leftNearUnique } : null) : null;
-  let s = 100 * (0.45 * contain + 0.25 * (f.leftUnique || f.rightUnique ? 1 : near ? 0.8 : 0) + 0.15 * (f.formatMatch ? 1 : 0) + 0.15 * f.nameSim);
-  const notes: string[] = [];
-  if (near) notes.push(`${near.side.table}.${near.side.column} is unique except for ${near.rows} rows that share ${near.value}`);
-  else if (!f.leftUnique && !f.rightUnique) { s -= 30; notes.push('neither side is unique, so rows would multiply'); }
-  if (f.minDistinct < 3) { s -= 60; notes.push('too few distinct values to be a key'); }
-  if (f.bothRowNumbers) { s -= 45; notes.push('both columns look like row numbers'); }
   const all = [left, right, ...also.flatMap((p) => [p.left, p.right])];
   const nT = all.reduce((n, k) => n + k.transforms.length, 0);
-  s -= 2 * nT;
-  const score = Math.max(0, Math.min(100, Math.round(s)));
+  const sc: ScorePart[] = [
+    { id: 'found', label: 'Keys found in the other file', points: SCORE_WEIGHTS.found * contain },
+    { id: 'unique', label: near ? 'One row per key on one side, nearly' : 'One row per key on one side', points: f.leftUnique || f.rightUnique ? SCORE_WEIGHTS.unique : near ? SCORE_WEIGHTS.unique * 0.8 : 0 },
+    { id: 'format', label: 'Same kind of value', points: f.formatMatch ? SCORE_WEIGHTS.format : 0 },
+    { id: 'names', label: 'Column names match', points: SCORE_WEIGHTS.names * f.nameSim },
+  ];
+  const notes: string[] = [];
+  if (near) notes.push(`${near.side.table}.${near.side.column} is unique except for ${near.rows} rows that share ${near.value}`);
+  else if (!f.leftUnique && !f.rightUnique) { sc.push({ id: 'not-unique', label: 'Neither side has one row per key', points: -30 }); notes.push('neither side is unique, so rows would multiply'); }
+  if (f.minDistinct < 3) { sc.push({ id: 'few-values', label: 'Too few different values to be a key', points: -60 }); notes.push('too few distinct values to be a key'); }
+  if (f.bothRowNumbers) { sc.push({ id: 'row-numbers', label: 'Both look like row numbers', points: -45 }); notes.push('both columns look like row numbers'); }
+  if (nT) sc.push({ id: 'cleanup', label: nT === 1 ? 'One cleanup step needed' : `${nT} cleanup steps needed`, points: -2 * nT });
+  const raw = Math.round(sc.reduce((a, p) => a + p.points, 0));
+  const score = Math.max(0, Math.min(100, raw));
+  const scoreParts = sc.filter((p) => p.points !== 0);
 
   const fixes = describeTransforms(all.flatMap((k) => k.transforms));
   const cols = (side: 'left' | 'right') => [side === 'left' ? left : right, ...also.map((p) => p[side])].map((k) => k.column).join(' × ');
@@ -72,5 +83,5 @@ export function scoreCandidate(f: Features, left: KeyRef, right: KeyRef, also: K
     f.nameSim >= 0.5 ? `names match (${left.column} ↔ ${right.column})` : '',
     ...notes,
   ].filter(Boolean);
-  return { score, reason: parts.join('; ') + '.' };
+  return { score, reason: parts.join('; ') + '.', parts: scoreParts, capped: score !== raw };
 }
