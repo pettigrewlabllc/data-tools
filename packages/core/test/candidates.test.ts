@@ -81,3 +81,18 @@ describe('scoreColumns', () => {
     await expect(scoreColumns(db, a, b, 'nope', 'y')).rejects.toThrow('no column a.nope');
   });
 });
+
+describe('isReliable', () => {
+  const cand = (f: Partial<import('../src').Features>, score = 75) => ({ score, features: { containLeft: 0, containRight: 0, overlap: 0, leftUnique: false, rightUnique: false, formatMatch: true, nameSim: 1, minDistinct: 100, bothRowNumbers: false, ...f } }) as never;
+  it('trusts a lookup key that covers half the other file', async () => {
+    const { isReliable } = await import('../src');
+    expect(isReliable(cand({ containLeft: 0.5, containRight: 0.5, overlap: 500, rightUnique: true }))).toBe(true);
+  });
+  it("doesn't trust half coverage without a unique side, a tiny overlap, or a low score", async () => {
+    const { isReliable } = await import('../src');
+    expect(isReliable(cand({ containLeft: 0.5, overlap: 500 }))).toBe(false);
+    expect(isReliable(cand({ containLeft: 0.5, overlap: 12, rightUnique: true }))).toBe(false);
+    expect(isReliable(cand({ containLeft: 0.25, overlap: 500, rightUnique: true }))).toBe(false);
+    expect(isReliable(cand({ containLeft: 0.9, overlap: 500, rightUnique: true }, 40))).toBe(false);
+  });
+});

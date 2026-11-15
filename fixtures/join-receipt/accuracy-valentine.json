@@ -2,12 +2,12 @@
   "synthetic": false,
   "easierThanRealJoins": true,
   "pairs": 154,
-  "correct": 37,
+  "correct": 76,
   "topPickCorrect": 113,
   "byFamily": {
     "valentine-ChEMBL": {
       "pairs": 48,
-      "correct": 13,
+      "correct": 26,
       "topPickCorrect": 26
     },
     "valentine-OpenData": {
@@ -17,19 +17,19 @@
     },
     "valentine-TPC-DI": {
       "pairs": 48,
-      "correct": 24,
+      "correct": 48,
       "topPickCorrect": 48
     },
     "nyc-open-data": {
       "pairs": 10,
-      "correct": 0,
+      "correct": 2,
       "topPickCorrect": 7
     }
   },
   "byRule": {
     "unique-source": {
       "pairs": 100,
-      "correct": 37,
+      "correct": 76,
       "topPickCorrect": 76
     },
     "any-match": {
@@ -43,11 +43,11 @@
       "id": "assays_both_50_1_ac1_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assays_assay_id",
       "top1": "assay_id ↔ assays_assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assays_assay_id"
@@ -123,11 +123,11 @@
       "id": "assays_both_50_1_ec_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assay_id",
       "top1": "assay_id ↔ assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assay_id"
@@ -139,11 +139,11 @@
       "id": "assays_both_50_30_ac1_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assays_assay_id",
       "top1": "assay_id ↔ assays_assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assays_assay_id"
@@ -171,11 +171,11 @@
       "id": "assays_both_50_30_ac3_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "chembl_id ↔ chmbl_d",
       "top1": "chembl_id ↔ chmbl_d",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ ss_d",
@@ -220,11 +220,11 @@
       "id": "assays_both_50_30_ec_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assay_id",
       "top1": "assay_id ↔ assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assay_id"
@@ -236,11 +236,11 @@
       "id": "assays_both_50_50_ac1_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assays_assay_id",
       "top1": "assay_id ↔ assays_assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assays_assay_id",
@@ -253,11 +253,11 @@
       "id": "assays_both_50_50_ac2_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "chembl_id ↔ CHEI",
       "top1": "chembl_id ↔ CHEI",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ ASI",
@@ -270,11 +270,11 @@
       "id": "assays_both_50_50_ac3_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "chembl_id ↔ chmbl_d",
       "top1": "chembl_id ↔ chmbl_d",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ ss_d",
@@ -319,11 +319,11 @@
       "id": "assays_both_50_50_ec_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assay_id",
       "top1": "assay_id ↔ assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assay_id"
@@ -335,11 +335,11 @@
       "id": "assays_both_50_70_ac1_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assays_assay_id",
       "top1": "assay_id ↔ assays_assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assays_assay_id"
@@ -367,11 +367,11 @@
       "id": "assays_both_50_70_ac3_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "chembl_id ↔ chmbl_d",
       "top1": "chembl_id ↔ chmbl_d",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ ss_d",
@@ -400,11 +400,11 @@
       "id": "assays_both_50_70_ac5_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "chembl_id ↔ assays_chmbl_d",
       "top1": "chembl_id ↔ assays_chmbl_d",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assays_ss_d",
@@ -417,11 +417,11 @@
       "id": "assays_both_50_70_ec_ev",
       "family": "valentine-ChEMBL",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "assay_id ↔ assay_id",
       "top1": "assay_id ↔ assay_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "assay_id ↔ assay_id"
@@ -2456,11 +2456,11 @@
       "id": "prospect_both_50_1_ac1_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgencyID",
       "top1": "AgencyID ↔ prospect_AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgencyID"
@@ -2472,11 +2472,11 @@
       "id": "prospect_both_50_1_ac2_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgID",
       "top1": "AgencyID ↔ AgID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgID"
@@ -2488,11 +2488,11 @@
       "id": "prospect_both_50_1_ac3_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ gncd",
       "top1": "AgencyID ↔ gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ gncd"
@@ -2504,11 +2504,11 @@
       "id": "prospect_both_50_1_ac4_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgeID",
       "top1": "AgencyID ↔ prospect_AgeID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgeID"
@@ -2520,11 +2520,11 @@
       "id": "prospect_both_50_1_ac5_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_gncd",
       "top1": "AgencyID ↔ prospect_gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_gncd"
@@ -2536,11 +2536,11 @@
       "id": "prospect_both_50_1_ec_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgencyID",
       "top1": "AgencyID ↔ AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgencyID"
@@ -2552,11 +2552,11 @@
       "id": "prospect_both_50_30_ac1_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgencyID",
       "top1": "AgencyID ↔ prospect_AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgencyID"
@@ -2568,11 +2568,11 @@
       "id": "prospect_both_50_30_ac2_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgeID",
       "top1": "AgencyID ↔ AgeID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgeID"
@@ -2584,11 +2584,11 @@
       "id": "prospect_both_50_30_ac3_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ gncd",
       "top1": "AgencyID ↔ gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ gncd"
@@ -2600,11 +2600,11 @@
       "id": "prospect_both_50_30_ac4_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgID",
       "top1": "AgencyID ↔ prospect_AgID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgID"
@@ -2616,11 +2616,11 @@
       "id": "prospect_both_50_30_ac5_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_gncd",
       "top1": "AgencyID ↔ prospect_gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_gncd"
@@ -2632,11 +2632,11 @@
       "id": "prospect_both_50_30_ec_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgencyID",
       "top1": "AgencyID ↔ AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgencyID"
@@ -2648,11 +2648,11 @@
       "id": "prospect_both_50_50_ac1_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgencyID",
       "top1": "AgencyID ↔ prospect_AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgencyID"
@@ -2664,11 +2664,11 @@
       "id": "prospect_both_50_50_ac2_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgeID",
       "top1": "AgencyID ↔ AgeID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgeID"
@@ -2680,11 +2680,11 @@
       "id": "prospect_both_50_50_ac3_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ gncd",
       "top1": "AgencyID ↔ gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ gncd"
@@ -2696,11 +2696,11 @@
       "id": "prospect_both_50_50_ac4_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgeID",
       "top1": "AgencyID ↔ prospect_AgeID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgeID"
@@ -2712,11 +2712,11 @@
       "id": "prospect_both_50_50_ac5_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_gncd",
       "top1": "AgencyID ↔ prospect_gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_gncd"
@@ -2728,11 +2728,11 @@
       "id": "prospect_both_50_50_ec_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgencyID",
       "top1": "AgencyID ↔ AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgencyID"
@@ -2744,11 +2744,11 @@
       "id": "prospect_both_50_70_ac1_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgencyID",
       "top1": "AgencyID ↔ prospect_AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgencyID"
@@ -2760,11 +2760,11 @@
       "id": "prospect_both_50_70_ac2_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgID",
       "top1": "AgencyID ↔ AgID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgID"
@@ -2776,11 +2776,11 @@
       "id": "prospect_both_50_70_ac3_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ gncd",
       "top1": "AgencyID ↔ gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ gncd"
@@ -2792,11 +2792,11 @@
       "id": "prospect_both_50_70_ac4_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_AgeID",
       "top1": "AgencyID ↔ prospect_AgeID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_AgeID"
@@ -2808,11 +2808,11 @@
       "id": "prospect_both_50_70_ac5_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ prospect_gncd",
       "top1": "AgencyID ↔ prospect_gncd",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ prospect_gncd"
@@ -2824,11 +2824,11 @@
       "id": "prospect_both_50_70_ec_ev",
       "family": "valentine-TPC-DI",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "AgencyID ↔ AgencyID",
       "top1": "AgencyID ↔ AgencyID",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.5,
       "accept": [
         "AgencyID ↔ AgencyID"
@@ -3266,11 +3266,11 @@
       "id": "City_Government__DPR_AthleticFacilities_001",
       "family": "nyc-open-data",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "SysRef ↔ system",
       "top1": "SysRef ↔ system",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.349,
       "accept": [
         "SysRef ↔ system"
@@ -3336,11 +3336,11 @@
       "id": "Housing_&_Development__Housing_Maintenance_Code_Complaints_and_Problems",
       "family": "nyc-open-data",
       "rule": "unique-source",
-      "correct": false,
+      "correct": true,
       "topPickCorrect": true,
-      "got": "none",
+      "got": "ISSUE_ID ↔ problem_id",
       "top1": "ISSUE_ID ↔ problem_id",
-      "reliable": false,
+      "reliable": true,
       "contain": 0.339,
       "accept": [
         "ISSUE_ID ↔ problem_id"

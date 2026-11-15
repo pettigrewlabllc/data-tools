@@ -114,6 +114,22 @@ export async function scoreColumns(db: Db, lp: TableProfile, rp: TableProfile, l
 
 export const RELIABLE_SCORE = 50;
 export const RELIABLE_CONTAINMENT = 0.6;
+/**
+ * A key that is unique on one side is a lookup, and a lookup often covers only part of the other file (a list of
+ * active customers, half the rows of a split table). For those, a smaller share found is still a real key, as long
+ * as enough values match that it can't be chance. Found on the Valentine set, where 37 right keys at 50% overlap
+ * were held back by the 60% bar.
+ */
+export const RELIABLE_CONTAINMENT_LOOKUP = 0.3;
+export const RELIABLE_MIN_OVERLAP = 20;
+
+export function isReliable(top: JoinCandidate | undefined): boolean {
+  if (!top || top.score < RELIABLE_SCORE) return false;
+  const f = top.features;
+  const contain = Math.max(f.containLeft, f.containRight);
+  if (contain >= RELIABLE_CONTAINMENT) return true;
+  return (f.leftUnique || f.rightUnique) && contain >= RELIABLE_CONTAINMENT_LOOKUP && f.overlap >= RELIABLE_MIN_OVERLAP;
+}
 
 export async function candidatesForPair(db: Db, lp: TableProfile, rp: TableProfile): Promise<PairResult> {
   const found: JoinCandidate[] = [];
@@ -133,7 +149,7 @@ export async function candidatesForPair(db: Db, lp: TableProfile, rp: TableProfi
   const composite = await compositeCandidate(db, lp, rp, found);
   if (composite) found.unshift(composite);
   const top = found[0];
-  const reliable = !!top && top.score >= RELIABLE_SCORE && Math.max(top.features.containLeft, top.features.containRight) >= RELIABLE_CONTAINMENT;
+  const reliable = isReliable(top);
   return { left: lp.table, right: rp.table, best: found.slice(0, 3), reliable };
 }
 
