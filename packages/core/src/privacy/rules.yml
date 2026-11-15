@@ -1,0 +1,67 @@
+# status: draft — rule set to be authored/approved by Joel
+#
+# Sensitive-combination rules. Each one is deterministic: it looks only at which categories are present.
+# A selector is an exact category id, an id ending in .* (it and everything under it), or an @tag:
+#   @gdpr_art9  @cpra_sensitive  @hipaa_identifier  @direct_identifier  @quasi_identifier  @childrens
+# `when.any` fires if any selector is present. `when.all` fires if every group has a present selector.
+# A rule cites its sources and states what the rule says. It does not say whether anyone meets it.
+status: draft — rule set to be authored/approved by Joel
+rules:
+  - id: gdpr-art9-special-category
+    title: GDPR special category data
+    summary: >-
+      This data includes a category that GDPR Art. 9(1) lists as a special category. Art. 9(1) prohibits processing
+      these categories unless one of the conditions in Art. 9(2) applies.
+    sources:
+      - "GDPR Art. 9(1)"
+      - "GDPR Art. 9(2)"
+    when:
+      any: ["@gdpr_art9"]
+
+  - id: cpra-sensitive-personal-information
+    title: CPRA sensitive personal information
+    summary: >-
+      This data includes a category that Cal. Civ. Code §1798.140(ae) defines as sensitive personal information.
+      Section 1798.121 gives California consumers a right to limit its use and disclosure.
+    sources:
+      - "Cal. Civ. Code §1798.140(ae)"
+      - "Cal. Civ. Code §1798.121"
+    when:
+      any: ["@cpra_sensitive"]
+
+  - id: hipaa-identifier-with-health
+    title: HIPAA identifier next to health data
+    summary: >-
+      Health information sits alongside a data element on the HIPAA Safe Harbor identifier list. Safe Harbor
+      de-identification under 45 CFR §164.514(b)(2)(i) requires removing all 18 listed identifier types. The rule
+      reaches covered entities and their business associates.
+    sources:
+      - "45 CFR §164.514(b)(2)(i)(A)-(R)"
+    when:
+      all:
+        - any: ["@hipaa_identifier"]
+        - any: ["user.health_and_medical"]
+
+  - id: coppa-child-under-13
+    title: Data about children under 13
+    summary: >-
+      This data includes a field about children. The COPPA Rule at 16 CFR §312.2 defines a child as under 13, and
+      §312.5 requires verifiable parental consent before collecting personal information from one.
+    sources:
+      - "16 CFR §312.2"
+      - "16 CFR §312.5"
+    when:
+      any: ["@childrens"]
+
+  - id: precise-geolocation-with-direct-identifier
+    title: Precise location joined with a direct identifier
+    summary: >-
+      Precise geolocation is sensitive personal information under Cal. Civ. Code §1798.140(ae), and GDPR Art. 4(1)
+      names location data as something that can identify a person. Here it appears with a direct identifier.
+    sources:
+      - "Cal. Civ. Code §1798.140(ae)"
+      - "GDPR Art. 4(1)"
+    when:
+      all:
+        - any: ["user.location.precise"]
+        - any: ["@direct_identifier"]
