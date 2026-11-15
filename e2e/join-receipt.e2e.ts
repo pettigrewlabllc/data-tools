@@ -154,3 +154,23 @@ test('a case cleanup that merges different keys is called out on the receipt', a
   await expect(c.locator('.collision')).toContainText('The cleanup turned 2 different prices.csv sku values into 1 key');
   await expect(c.locator('.collision')).toContainText('"AB-100" and "ab-100" both became "ab-100"');
 });
+
+test('values a cast cannot convert are counted on the receipt', async ({ page }) => {
+  await page.goto('/');
+  const left = 'zip,orders\n02134,5\n10001,7\nn/a,9\nunknown,4\n94105,3\n60601,2\n';
+  const right = 'zip,stores\n2134,1\n10001,2\n94105,3\n60601,4\n';
+  await page.locator('input[type=file]').setInputFiles([
+    { name: 'orders.csv', mimeType: 'text/csv', buffer: Buffer.from(left) },
+    { name: 'stores.csv', mimeType: 'text/csv', buffer: Buffer.from(right) },
+  ]);
+  const c = page.locator('.card.receipt').first();
+  await expect(c.locator('.paper')).toBeVisible({ timeout: 60_000 });
+  await c.locator('details.edit summary').click();
+  for (const chip of await c.getByRole('button', { name: /^Remove / }).all()) await chip.click();
+  await c.getByLabel(/^Add a cleanup step to orders/).selectOption({ label: 'read as a number' });
+  await c.getByLabel(/^Add a cleanup step to stores/).selectOption({ label: 'read as a number' });
+  await expect(c.locator('.collision')).toContainText('2 orders.csv zip values didn\'t convert to a whole number, like "n/a"');
+  await expect(c.locator('.paper')).toContainText('4 of 6 orders.csv rows');
+  await expect(c.locator('.samples')).toContainText("(didn't convert)");
+  await expect(c.locator('.samples')).not.toContainText('lookup');
+});

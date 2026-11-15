@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  describePattern, describeCollision, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
+  describePattern, describeCollision, describeCastFailure, scoreColumns, buildPayload, buildRequest, redact, draftFixes, promptHash, SCORE_LABEL, AGG_FNS, CROSSWALK_KINDS, MAX_EXTRA_KEYS,
   type PairResult, type Plan, type Receipt, type Draft, type TableProfile, type Transform, type KeyRef, type KeyPair, type Aggregate, type AggFn, type Db,
 } from '@data-tools/core';
 import type { AiState } from './AiPanel';
@@ -18,6 +18,12 @@ export interface Card {
   proposedBy: 'rule' | 'user' | 'llm';
   llm: { model: string; prompt_sha256: string } | null;
   drafts: Draft[];
+}
+
+/** What an empty key after cleanup means: a lookup with no entry, or a value a cast couldn't convert. */
+function emptyAfter(plan: Plan, side: 'left' | 'right'): string {
+  const ts = (side === 'left' ? plan.join.left : plan.join.right).transforms;
+  return ts.some((t) => t.op === 'crosswalk') ? '(no match in lookup)' : "(didn't convert)";
 }
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
@@ -178,6 +184,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
           <div><dt>Cleanup</dt><dd>{r.normalisations[0].toUpperCase() + r.normalisations.slice(1)} took the match rate from {pct(r.matchRateBefore ?? 0)} to {pct(r.matchRateAfter)}.</dd></div>
         )}
       </dl>
+      {r.castFailures.map((c, i) => <p key={`cast-${i}`} className="collision" role="note">{describeCastFailure(c, c.side === 'left' ? lfile : rfile)}</p>)}
       {r.collisions.map((c, i) => <p key={`col-${i}`} className="collision" role="note">{describeCollision(c, c.side === 'left' ? lfile : rfile)}</p>)}
       {r.fanoutWarning && (
         <div className="fanout" role="note">
@@ -192,7 +199,7 @@ function ReceiptBody({ r, plan, lfile, rfile, rawRight, unmatched, onRollUp }: {
           <caption>Before and after the cleanup</caption>
           <thead><tr><th scope="col">File</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
           <tbody>
-            {r.samples.map((s, i) => <tr key={i}><td>{s.side === 'left' ? lfile : rfile}</td><td><code>{s.raw}</code></td><td><code>{s.transformed ?? '(no match in lookup)'}</code></td></tr>)}
+            {r.samples.map((s, i) => <tr key={i}><td>{s.side === 'left' ? lfile : rfile}</td><td><code>{s.raw}</code></td><td><code>{s.transformed ?? emptyAfter(plan, s.side)}</code></td></tr>)}
           </tbody>
         </table>
       )}
